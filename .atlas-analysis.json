@@ -1,0 +1,73 @@
+{
+  "projectType": "frontend",
+  "projectName": "Fuzzy C-Means Clustering",
+  "projectDescription": "An interactive React + TypeScript application for visualizing and computing both crisp and fuzzy C-Means clustering algorithms in real-time.",
+  "theme": "palm",
+  "primaryColor": "#fbc926",
+  "lightColor": "#8c73fa",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "installation", "quickstart"]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": ["concepts/clustering", "concepts/crisp-cmeans", "concepts/fuzzy-cmeans"]
+          },
+          {
+            "group": "Guides",
+            "pages": ["guides/using-the-interface", "guides/understanding-results", "guides/convergence"]
+          },
+          {
+            "group": "Components",
+            "pages": ["components/overview", "components/input-point", "components/data-chart", "components/matrix-table", "components/point-table"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Algorithms",
+            "pages": ["api/cmeans", "api/fuzzy-cmeans"]
+          },
+          {
+            "group": "Hooks",
+            "pages": ["api/use-cmeans"]
+          },
+          {
+            "group": "Utilities",
+            "pages": ["api/distance-matrix", "api/membership-matrix", "api/cost-function"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Interactive visualization of clustering algorithms with real-time Chart.js scatter plots",
+    "Support for both crisp and fuzzy C-Means clustering variants",
+    "Step-by-step iteration control with distance and membership matrix views",
+    "Cost function monitoring for convergence analysis",
+    "Guided input system for manual or random point/centroid generation"
+  ],
+  "publicApiSurface": [
+    "CMeans(points, centroids)",
+    "fuzzyCMeans(points, centroids)",
+    "useCMeans(algorithmType)",
+    "getDistanceMatrix(points, centroids)",
+    "getMembershipMatrix(distanceMatrix)",
+    "getFuzzyMembershipMatrix(distanceMatrix, fuzzyParameter)",
+    "getNewCentroids(points, membershipMatrix)",
+    "getNewFuzzyCentroids(points, membershipMatrix, fuzzyParameter)",
+    "getCostValues(membershipMatrix, distanceMatrix)",
+    "getFuzzyCostValues(distanceMatrix, membershipMatrix, fuzzyParameter)",
+    "getCostFunction(costValues)",
+    "euclidianDistance(pointA, pointB)",
+    "generateRandomPoints(n)"
+  ]
+}
