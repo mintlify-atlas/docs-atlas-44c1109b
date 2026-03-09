@@ -1,0 +1,219 @@
+---
+title: Installation
+description: Set up the C-Means Algorithm Calculator development environment
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (v16 or higher recommended)
+- **npm**, **yarn**, or **pnpm** package manager
+- **Git** for cloning the repository
+
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the Repository">
+    Clone the project from GitHub and navigate to the project directory:
+    
+    ```bash
+    git clone https://github.com/username/CMeansTypescript.git
+    cd CMeansTypescript
+    ```
+    
+    <Note>
+      Make sure to replace `username` with the actual GitHub username if the repository URL is different.
+    </Note>
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install all required packages using your preferred package manager:
+    
+    <CodeGroup>
+      ```bash npm
+      npm install
+      ```
+      
+      ```bash yarn
+      yarn install
+      ```
+      
+      ```bash pnpm
+      pnpm install
+      ```
+    </CodeGroup>
+    
+    This will install all dependencies including:
+    - React 18.2.0 and React DOM
+    - Ant Design 5.18.0 for UI components
+    - Chart.js and react-chartjs-2 for visualizations
+    - Vite for build tooling
+    - TypeScript for type safety
+  </Step>
+
+  <Step title="Start the Development Server">
+    Launch the Vite development server:
+    
+    <CodeGroup>
+      ```bash npm
+      npm run dev
+      ```
+      
+      ```bash yarn
+      yarn dev
+      ```
+      
+      ```bash pnpm
+      pnpm dev
+      ```
+    </CodeGroup>
+    
+    The application will be available at `http://localhost:5173` in your browser.
+    
+    <Tip>
+      Vite provides instant hot module replacement (HMR), so changes you make to the source code will be reflected immediately in the browser.
+    </Tip>
+  </Step>
+
+  <Step title="Verify Installation">
+    Open your browser and navigate to `http://localhost:5173`. You should see the C-Means Algorithm Calculator interface with:
+    
+    - Input fields for adding points and centroids
+    - Empty point and centroid tables
+    - A blank scatter plot chart
+    - Iterate and Reset buttons
+    
+    If you see this interface, your installation was successful!
+  </Step>
+</Steps>
+
+## Additional Commands
+
+Once you have the project set up, you can use these additional npm scripts:
+
+### Build for Production
+
+Create an optimized production build:
+
+<CodeGroup>
+  ```bash npm
+  npm run build
+  ```
+  
+  ```bash yarn
+  yarn build
+  ```
+  
+  ```bash pnpm
+  pnpm build
+  ```
+</CodeGroup>
+
+This command:
+1. Runs the TypeScript compiler (`tsc`) to check for type errors
+2. Uses Vite to bundle and optimize the application
+3. Outputs the built files to the `dist/` directory
+
+### Preview Production Build
+
+Preview the production build locally:
+
+<CodeGroup>
+  ```bash npm
+  npm run preview
+  ```
+  
+  ```bash yarn
+  yarn preview
+  ```
+  
+  ```bash pnpm
+  pnpm preview
+  ```
+</CodeGroup>
+
+### Lint the Codebase
+
+Run ESLint to check for code quality issues:
+
+<CodeGroup>
+  ```bash npm
+  npm run lint
+  ```
+  
+  ```bash yarn
+  yarn lint
+  ```
+  
+  ```bash pnpm
+  pnpm lint
+  ```
+</CodeGroup>
+
+The linter is configured to:
+- Check `.ts` and `.tsx` files
+- Report unused disable directives
+- Fail on any warnings (max-warnings 0)
+
+## Project Structure
+
+After installation, your project directory will look like this:
+
+```
+CMeansTypescript/
+├── src/
+│   ├── components/
+│   │   ├── InputPoint.tsx    # Point/centroid input interface
+│   │   ├── DataChart.tsx     # Chart.js scatter plot
+│   │   ├── MatrixTable.tsx   # Distance/membership matrix display
+│   │   └── PointTable.tsx    # Point/centroid coordinate tables
+│   ├── utils/
+│   │   ├── CMeans.ts         # Crisp C-Means implementation
+│   │   ├── FuzzyCmeans.ts    # Fuzzy C-Means implementation
+│   │   └── useCmeans.ts      # React hook for algorithm orchestration
+│   └── App.tsx               # Main application component
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── tailwind.config.js
+```
+
+<Info>
+  The `src/utils/` directory contains the core clustering algorithm logic, while `src/components/` contains the React components for the user interface.
+</Info>
+
+## Troubleshooting
+
+### Port Already in Use
+
+If port 5173 is already in use, Vite will automatically try the next available port (5174, 5175, etc.). Check the terminal output for the actual URL.
+
+### Dependency Installation Errors
+
+If you encounter errors during `npm install`, try:
+
+```bash
+# Clear npm cache
+npm cache clean --force
+
+# Delete node_modules and package-lock.json
+rm -rf node_modules package-lock.json
+
+# Reinstall
+npm install
+```
+
+### TypeScript Errors
+
+If you see TypeScript errors, ensure you're using a compatible version:
+
+```bash
+npx tsc --version
+```
+
+The project requires TypeScript 5.2.2 or higher.
+
+## Next Steps
+
+Now that you have the application running, proceed to the [Quick Start](/quickstart) guide to learn how to use the clustering algorithms.

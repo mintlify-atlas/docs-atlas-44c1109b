@@ -1,0 +1,158 @@
+---
+title: 'InputPoint Component'
+description: 'Component for adding data points and centroids with manual or random input'
+---
+
+## Overview
+
+The `InputPoint` component provides a user interface for adding new points or centroids to the clustering visualization. It supports both manual coordinate entry and random point generation.
+
+## Props
+
+<ParamField path="action" type="(point: Point) => void" required>
+  Callback function that receives the new point when the user clicks "Add" or "Random". This function should handle adding the point to the application state.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  The label for the component, typically "Point" or "Centroid". This appears in the heading and button labels.
+</ParamField>
+
+## Point Type
+
+The component uses the global `Point` type:
+
+```typescript
+type Point = {
+    x: number,
+    y: number
+}
+```
+
+## Usage
+
+### Basic Example
+
+```tsx
+import InputPoint from './components/InputPoint';
+
+function App() {
+  const [points, setPoints] = useState<Point[]>([]);
+  
+  const handleAddPoint = (point: Point) => {
+    setPoints([...points, point]);
+  };
+  
+  return (
+    <InputPoint 
+      action={handleAddPoint} 
+      title="Point" 
+    />
+  );
+}
+```
+
+### For Centroids
+
+```tsx
+import InputPoint from './components/InputPoint';
+
+function App() {
+  const [centroids, setCentroids] = useState<Point[]>([]);
+  
+  const handleAddCentroid = (centroid: Point) => {
+    setCentroids([...centroids, centroid]);
+  };
+  
+  return (
+    <InputPoint 
+      action={handleAddCentroid} 
+      title="Centroid" 
+    />
+  );
+}
+```
+
+## Features
+
+### Manual Input Mode
+
+Users can enter specific X and Y coordinates using numeric input fields:
+
+- Input fields accept values between -1000 and 1000
+- Uses Ant Design's `InputNumber` component for validation
+- Clicking "Add {title}" creates a point with the entered coordinates
+- Input fields are cleared after successful addition
+
+```tsx
+// From source code: InputPoint.tsx:14-27
+const handleAdd = () => {
+    const newPoint: Point = {
+        x: xAxis ?? 0,
+        y: yAxis ?? 0
+    }
+    try {
+        props.action(newPoint);
+        setXAxis(undefined);
+        setYAxis(undefined);
+    } catch (error) {
+        console.error(error);
+    }
+}
+```
+
+### Random Input Mode
+
+Users can generate random points without manual input:
+
+- Clicking "Random {title}" generates a random point
+- Uses the `generateRandomPoints` utility function
+- Automatically adds the generated point without requiring coordinate input
+- Useful for quickly populating the visualization with test data
+
+```tsx
+// From source code: InputPoint.tsx:29-39
+const handleAddRandom = () => {
+    const newPoint: Point = generateRandomPoints(1)[0];
+    try {
+        props.action(newPoint);
+        setXAxis(undefined);
+        setYAxis(undefined);
+    } catch (error) {
+        console.error(error);
+    }
+}
+```
+
+## Component State
+
+The component maintains internal state for the input fields:
+
+- `xAxis` - Current X coordinate value (number or undefined)
+- `yAxis` - Current Y coordinate value (number or undefined)
+
+Both values default to `undefined` and are reset after adding a point.
+
+## UI Layout
+
+The component renders:
+
+1. **Heading** - "Add {title}" using the provided title prop
+2. **Input Fields** - Two numeric inputs for X and Y coordinates, side by side
+3. **Action Buttons** - Two buttons:
+   - "Add {title}" - Submits manually entered coordinates
+   - "Random {title}" - Generates and submits a random point
+
+All elements are styled with Tailwind CSS for responsive layout and consistent spacing.
+
+## Error Handling
+
+The component includes basic error handling:
+
+- Try-catch blocks around the action callback
+- Errors are logged to the console
+- Input state is only cleared on successful point addition
+- Numeric inputs enforce min/max constraints (-1000 to 1000)
+
+## Source Code
+
+View the full implementation in the repository: `src/components/InputPoint.tsx`

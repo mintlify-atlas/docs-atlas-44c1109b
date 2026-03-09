@@ -1,0 +1,209 @@
+---
+title: "CMeans"
+description: "Execute one iteration of the C-means clustering algorithm"
+---
+
+## CMeans
+
+Executes one iteration of the C-means clustering algorithm. This function calculates the distance matrix, membership matrix, new centroids, cost values, and total cost function for a single iteration.
+
+```typescript
+export const CMeans = (points: Point[], centroids: Point[])
+```
+
+### Parameters
+
+<ParamField path="points" type="Point[]" required>
+  Array of points to cluster. Each point has `x` and `y` coordinates.
+</ParamField>
+
+<ParamField path="centroids" type="Point[]" required>
+  Array of initial centroids. Each centroid has `x` and `y` coordinates.
+</ParamField>
+
+### Returns
+
+Returns an object containing the results of one C-means iteration:
+
+<ResponseField name="distanceMatrix" type="number[][]">
+  Matrix of distances where each element [i][j] is the distance between the i-th centroid and the j-th point.
+</ResponseField>
+
+<ResponseField name="membershipMatrix" type="number[][]">
+  Membership matrix where each element [i][j] is 1 if the j-th point belongs to the i-th centroid, otherwise 0.
+</ResponseField>
+
+<ResponseField name="newCentroids" type="Point[]">
+  New array of centroids calculated as the mean of all points belonging to each centroid.
+</ResponseField>
+
+<ResponseField name="costValues" type="number[]">
+  Array of cost values for each centroid.
+</ResponseField>
+
+<ResponseField name="costFunction" type="number">
+  Total cost as the sum of all individual cost values.
+</ResponseField>
+
+### Example
+
+```typescript
+import { CMeans } from './utils/CMeans';
+
+const points = [
+  { x: 1, y: 2 },
+  { x: 3, y: 4 },
+  { x: 5, y: 6 },
+  { x: 7, y: 8 }
+];
+
+const centroids = [
+  { x: 2, y: 3 },
+  { x: 6, y: 7 }
+];
+
+const result = CMeans(points, centroids);
+
+console.log(result.newCentroids);
+console.log(result.costFunction);
+```
+
+## Helper Functions
+
+### getDistanceMatrix
+
+Calculates the distance matrix between each point and each centroid.
+
+```typescript
+export const getDistanceMatrix = (points: Point[], centroids: Point[])
+```
+
+<ParamField path="points" type="Point[]" required>
+  Array of points.
+</ParamField>
+
+<ParamField path="centroids" type="Point[]" required>
+  Array of centroids.
+</ParamField>
+
+**Returns:** A matrix of distances where each element [i][j] is the distance between the i-th centroid and the j-th point.
+
+### getMembershipMatrix
+
+Generates the membership matrix from the distance matrix.
+
+```typescript
+export const getMembershipMatrix = (distanceMatrix: number[][])
+```
+
+<ParamField path="distanceMatrix" type="number[][]" required>
+  Matrix of distances between points and centroids.
+</ParamField>
+
+**Returns:** A membership matrix where each element [i][j] is 1 if the j-th point belongs to the i-th centroid, otherwise 0.
+
+### getNewCentroids
+
+Calculates new centroids based on the membership matrix.
+
+```typescript
+export const getNewCentroids = (points: Point[], membershipMatrix: number[][])
+```
+
+<ParamField path="points" type="Point[]" required>
+  Array of points.
+</ParamField>
+
+<ParamField path="membershipMatrix" type="number[][]" required>
+  Membership matrix.
+</ParamField>
+
+**Returns:** A new array of centroids calculated as the mean of all points belonging to each centroid.
+
+### getCostValues
+
+Calculates the cost values for each centroid based on the membership and distance matrices.
+
+```typescript
+export const getCostValues = (membershipMatrix: number[][], distanceMatrix: number[][])
+```
+
+<ParamField path="membershipMatrix" type="number[][]" required>
+  Membership matrix.
+</ParamField>
+
+<ParamField path="distanceMatrix" type="number[][]" required>
+  Distance matrix.
+</ParamField>
+
+**Returns:** An array of cost values for each centroid.
+
+### getCostFunction
+
+Calculates the total cost from an array of individual cost values.
+
+```typescript
+export const getCostFunction = (costValues: number[])
+```
+
+<ParamField path="costValues" type="number[]" required>
+  Array of individual cost values.
+</ParamField>
+
+**Returns:** The total cost as the sum of all individual costs.
+
+### euclidianDistance
+
+Calculates the Euclidean distance between two points.
+
+```typescript
+export const euclidianDistance = (pointA: Point, pointB: Point)
+```
+
+<ParamField path="pointA" type="Point" required>
+  First point.
+</ParamField>
+
+<ParamField path="pointB" type="Point" required>
+  Second point.
+</ParamField>
+
+**Returns:** The Euclidean distance between the two points.
+
+### zeroMatrix
+
+Creates a zero matrix with the same dimensions as the input matrix.
+
+```typescript
+export function zeroMatrix(matrix: number[][])
+```
+
+<ParamField path="matrix" type="number[][]" required>
+  Input matrix.
+</ParamField>
+
+**Returns:** A matrix of the same dimensions with all elements set to 0.
+
+### generateRandomPoints
+
+Generates an array of random points.
+
+```typescript
+export function generateRandomPoints(n: number)
+```
+
+<ParamField path="n" type="number" required>
+  Number of points to generate.
+</ParamField>
+
+**Returns:** An array of n points with random coordinates between -100 and 100.
+
+#### Example
+
+```typescript
+import { generateRandomPoints } from './utils/CMeans';
+
+const randomPoints = generateRandomPoints(10);
+console.log(randomPoints);
+// Output: [{ x: -45, y: 67 }, { x: 23, y: -89 }, ...]
+```

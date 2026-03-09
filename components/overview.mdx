@@ -1,0 +1,76 @@
+---
+title: 'Component Overview'
+description: 'React components for the Fuzzy C-Means clustering visualization'
+---
+
+## Component Architecture
+
+The Fuzzy C-Means clustering application is built with four main React components that work together to provide an interactive clustering visualization experience:
+
+1. **InputPoint** - Handles user input for adding data points and centroids
+2. **DataChart** - Visualizes points and centroids using Chart.js scatter plots
+3. **MatrixTable** - Displays membership matrices in a tabular format
+4. **PointTable** - Shows point and centroid coordinates in table form
+
+## Component Hierarchy
+
+The components follow a simple, flat hierarchy where each component receives data through props from the parent application state:
+
+```
+App
+├── InputPoint (for points)
+├── InputPoint (for centroids)
+├── DataChart
+├── MatrixTable
+└── PointTable
+```
+
+All components use the shared `Point` type:
+
+```typescript
+type Point = {
+    x: number,
+    y: number
+}
+```
+
+## Component Details
+
+<CardGroup cols={2}>
+  <Card title="InputPoint" icon="arrow-pointer" href="./input-point">
+    Component for adding data points and centroids manually or randomly
+  </Card>
+  
+  <Card title="DataChart" icon="chart-scatter" href="./data-chart">
+    Scatter plot visualization with dynamic color coding based on membership values
+  </Card>
+  
+  <Card title="MatrixTable" icon="table" href="./matrix-table">
+    Table component for displaying membership matrices with centroid-point relationships
+  </Card>
+  
+  <Card title="PointTable" icon="table-list" href="./point-table">
+    Simple table for displaying point and centroid coordinates
+  </Card>
+</CardGroup>
+
+## Technology Stack
+
+The components leverage the following libraries:
+
+- **React** - Core UI framework
+- **Ant Design** - UI components (Table, InputNumber)
+- **Chart.js** with **react-chartjs-2** - Data visualization
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+
+## Data Flow
+
+All components follow a unidirectional data flow pattern:
+
+1. User interactions trigger callback functions passed via props
+2. Parent component updates application state
+3. Updated state flows down to components as props
+4. Components re-render with new data
+
+This architecture ensures predictable behavior and makes the components easy to test and maintain.

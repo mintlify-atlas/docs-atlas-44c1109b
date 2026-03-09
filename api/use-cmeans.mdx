@@ -1,0 +1,214 @@
+---
+title: "useCMeans Hook"
+description: "React hook for managing C-Means clustering algorithm state and operations"
+---
+
+## Overview
+
+The `useCMeans` hook provides a complete state management solution for both Fuzzy C-Means and Crisp C-Means clustering algorithms. It handles points, centroids, distance matrices, membership matrices, and iteration logic.
+
+## Function Signature
+
+```typescript
+const useCMeans = (initialAlgorithm: AlgorithmType) => {
+  // Returns clustering state and operations
+}
+```
+
+## Parameters
+
+<ParamField path="initialAlgorithm" type="AlgorithmType" required>
+  The initial algorithm type to use for clustering. Can be either `'fuzzy'` for Fuzzy C-Means or `'crisp'` for Crisp C-Means.
+  
+  **Type Definition:**
+  ```typescript
+  type AlgorithmType = 'fuzzy' | 'crisp'
+  ```
+</ParamField>
+
+## Return Values
+
+The hook returns an object containing state values, setter functions, and operation methods:
+
+### State Values
+
+<ResponseField name="algorithm" type="AlgorithmType">
+  The current algorithm type being used (`'fuzzy'` or `'crisp'`).
+</ResponseField>
+
+<ResponseField name="centroids" type="Point[]">
+  Array of centroid points for the clustering algorithm.
+  
+  **Point Type:**
+  ```typescript
+  type Point = {
+    x: number,
+    y: number
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="points" type="Point[]">
+  Array of data points to be clustered.
+</ResponseField>
+
+<ResponseField name="distanceMatrix" type="number[][]">
+  Matrix containing the distances between each point and each centroid.
+</ResponseField>
+
+<ResponseField name="membershipMatrix" type="number[][]">
+  Matrix representing the membership degree of each point to each cluster. For fuzzy clustering, values range from 0 to 1. For crisp clustering, values are binary (0 or 1).
+</ResponseField>
+
+<ResponseField name="newCentroids" type="Point[]">
+  The calculated new centroid positions after applying the algorithm. These will become the new centroids when `onIterate()` is called.
+</ResponseField>
+
+<ResponseField name="costValues" type="number[]">
+  Array of cost values for each cluster, representing the sum of distances or membership-weighted distances.
+</ResponseField>
+
+<ResponseField name="costFunction" type="number">
+  The total cost function value for the current clustering configuration. Lower values indicate better clustering.
+</ResponseField>
+
+### Setter Functions
+
+<ResponseField name="setAlgorithm" type="(algorithm: AlgorithmType) => void">
+  Updates the algorithm type between `'fuzzy'` and `'crisp'`.
+</ResponseField>
+
+<ResponseField name="setCentroids" type="(centroids: Point[]) => void">
+  Directly sets the centroid array.
+</ResponseField>
+
+<ResponseField name="setPoints" type="(points: Point[]) => void">
+  Directly sets the points array.
+</ResponseField>
+
+### Operation Methods
+
+<ResponseField name="addPoint" type="(point: Point) => void">
+  Adds a new data point to the clustering dataset.
+  
+  **Parameters:**
+  - `point`: Object with `x` and `y` coordinates
+</ResponseField>
+
+<ResponseField name="addCentroid" type="(centroid: Point) => void">
+  Adds a new centroid to the clustering algorithm.
+  
+  **Parameters:**
+  - `centroid`: Object with `x` and `y` coordinates
+</ResponseField>
+
+<ResponseField name="onIterate" type="() => void">
+  Executes one iteration of the clustering algorithm by updating centroids to their newly calculated positions. Shows an error notification if there are insufficient points or centroids.
+</ResponseField>
+
+<ResponseField name="onReset" type="() => void">
+  Resets the clustering state by clearing all points and centroids.
+</ResponseField>
+
+## Usage Example
+
+<CodeGroup>
+```typescript App.tsx
+import { useCMeans } from "./utils/useCmeans";
+import DataChart from "./components/DataChart";
+import InputPoint from "./components/InputPoint";
+import MatrixTable from "./components/MatrixTable";
+import PointTable from "./components/PointTable";
+
+function App() {
+  const {
+    addCentroid,
+    addPoint,
+    centroids,
+    costFunction,
+    distanceMatrix,
+    membershipMatrix,
+    onIterate,
+    onReset,
+    points
+  } = useCMeans("fuzzy");
+
+  return (
+    <main className="py-3 mx-auto max-w-5xl md:px-5 lg:px-0 lg:py-6">
+      <header className="py-4 px-3 flex flex-col items-center justify-center gap-4">
+        <h1 className="font-bold text-2xl md:text-3xl">
+          C-Means Algorithm Calculator
+        </h1>
+      </header>
+      
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-3">
+        <InputPoint action={addPoint} title="Point" />
+        <InputPoint action={addCentroid} title="Centroid" />
+      </section>
+      
+      <section className="px-3 mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+        <PointTable data={points} title="Points" />
+        <PointTable data={centroids} title="Centroids" />
+      </section>
+      
+      <section className="px-3 mt-8 w-full flex justify-center">
+        <DataChart
+          points={points}
+          centroids={centroids}
+          membershipMatrix={membershipMatrix}
+        />
+      </section>
+      
+      <section className="px-3 mt-4 flex justify-center py-2">
+        <h2 className="text-xl font-semibold">
+          Cost Function: {costFunction.toFixed(4) ?? 0}
+        </h2>
+      </section>
+      
+      <section className="flex items-center justify-center gap-2">
+        <button onClick={onReset}>
+          Reset
+        </button>
+        <button onClick={onIterate}>
+          Iterate
+        </button>
+      </section>
+      
+      <section className="flex flex-col items-center justify-center px-3 py-5 gap-6">
+        <MatrixTable matrix={distanceMatrix} title="Distance matrix" />
+        <MatrixTable matrix={membershipMatrix} title="Membership matrix" />
+      </section>
+    </main>
+  );
+}
+
+export default App;
+```
+</CodeGroup>
+
+## Type Definitions
+
+```typescript
+type Point = {
+  x: number,
+  y: number
+}
+
+type AlgorithmType = 'fuzzy' | 'crisp'
+```
+
+## Implementation Details
+
+<Note>
+  The hook automatically switches between Fuzzy C-Means and Crisp C-Means implementations based on the selected algorithm type. The membership matrix interpretation differs between algorithms:
+  - **Fuzzy**: Values represent degrees of membership (0-1)
+  - **Crisp**: Values are binary cluster assignments (0 or 1)
+</Note>
+
+## Error Handling
+
+The `onIterate()` function includes validation to ensure sufficient data exists before performing an iteration. If there are insufficient points or centroids, an error notification is displayed using Ant Design's notification system.
+
+## Source
+
+Defined in `src/utils/useCmeans.ts:13`

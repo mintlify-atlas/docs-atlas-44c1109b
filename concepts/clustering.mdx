@@ -1,0 +1,176 @@
+---
+title: "Understanding Clustering"
+description: "Learn about clustering algorithms and the C-Means algorithm family"
+---
+
+## What is Clustering?
+
+Clustering is an unsupervised machine learning technique that groups similar data points together based on their characteristics. The goal is to partition a dataset into distinct groups (clusters) where points within the same cluster are more similar to each other than to points in other clusters.
+
+<Info>
+Unlike supervised learning, clustering doesn't require labeled training data. The algorithm discovers patterns and structures in the data automatically.
+</Info>
+
+## Why Use Clustering?
+
+Clustering algorithms are valuable for:
+
+<CardGroup cols={2}>
+  <Card title="Data Exploration" icon="magnifying-glass">
+    Discover natural groupings and patterns in unlabeled datasets
+  </Card>
+  <Card title="Customer Segmentation" icon="users">
+    Group customers based on behavior, preferences, or demographics
+  </Card>
+  <Card title="Image Segmentation" icon="image">
+    Partition images into meaningful regions for computer vision tasks
+  </Card>
+  <Card title="Anomaly Detection" icon="triangle-exclamation">
+    Identify outliers that don't fit well into any cluster
+  </Card>
+</CardGroup>
+
+## The C-Means Algorithm Family
+
+The C-Means family of algorithms partitions data points into **C** clusters by iteratively:
+
+<Steps>
+  <Step title="Initialize Centroids">
+    Start with C initial centroid positions, either randomly or using domain knowledge
+  </Step>
+  <Step title="Assign Memberships">
+    Calculate how each point relates to each centroid (either crisp or fuzzy assignment)
+  </Step>
+  <Step title="Update Centroids">
+    Recompute centroid positions based on the membership assignments
+  </Step>
+  <Step title="Check Convergence">
+    Repeat steps 2-3 until centroids stabilize or a cost function threshold is met
+  </Step>
+</Steps>
+
+### Distance Calculation
+
+Both algorithms use Euclidean distance to measure similarity between points and centroids:
+
+```typescript
+/**
+ * Calculates the Euclidean distance between two points.
+ */
+export const euclidianDistance = (pointA: Point, pointB: Point) => {
+    const distance = Math.sqrt(
+        Math.pow((pointA.x - pointB.x), 2) + 
+        Math.pow((pointA.y - pointB.y), 2)
+    );
+    return distance;
+}
+```
+
+The distance matrix stores all pairwise distances:
+
+```typescript
+/**
+ * Calculates the distance matrix between each point and each centroid.
+ * 
+ * @returns A matrix where element [i][j] is the distance 
+ *          between the i-th centroid and the j-th point.
+ */
+export const getDistanceMatrix = (points: Point[], centroids: Point[]) => {
+    const distanceMatrix = [];
+    for (let i = 0; i < centroids.length; i++) {
+        const distancesRow = [];
+        for (let j = 0; j < points.length; j++) {
+            const newDistance = euclidianDistance(centroids[i], points[j]);
+            distancesRow.push(newDistance);
+        }
+        distanceMatrix.push(distancesRow);
+    }
+    return distanceMatrix;
+}
+```
+
+## Crisp vs. Fuzzy Clustering
+
+The C-Means family includes two main variants that differ in how they assign points to clusters:
+
+### Crisp Clustering (Hard Assignment)
+
+In **crisp C-Means**, each point belongs to exactly one cluster. The membership is binary:
+
+- Membership value = **1** if the point belongs to the cluster
+- Membership value = **0** if the point doesn't belong to the cluster
+
+<Note>
+Crisp clustering creates clear, non-overlapping boundaries between clusters. Each point is assigned to its nearest centroid.
+</Note>
+
+**Example membership matrix** (3 clusters, 5 points):
+
+```
+        Point1  Point2  Point3  Point4  Point5
+Cluster1   1      0       0       1       0
+Cluster2   0      1       0       0       0  
+Cluster3   0      0       1       0       1
+```
+
+### Fuzzy Clustering (Soft Assignment)
+
+In **fuzzy C-Means**, each point has a degree of membership to all clusters. Membership values are between 0 and 1, and sum to 1 for each point:
+
+- Membership values represent probability or degree of belonging
+- Points can partially belong to multiple clusters
+- A **fuzzification parameter** (m) controls how fuzzy the boundaries are
+
+<Note>
+Fuzzy clustering better represents real-world scenarios where boundaries between groups are gradual rather than sharp.
+</Note>
+
+**Example membership matrix** (3 clusters, 5 points):
+
+```
+        Point1  Point2  Point3  Point4  Point5
+Cluster1  0.70    0.15    0.10    0.65    0.20
+Cluster2  0.20    0.75    0.15    0.25    0.15
+Cluster3  0.10    0.10    0.75    0.10    0.65
+```
+
+## Cost Function
+
+Both algorithms optimize an objective function that measures clustering quality:
+
+```typescript
+/**
+ * Calculates the total cost as the sum of all individual cluster costs.
+ */
+export const getCostFunction = (costValues: number[]) => 
+    costValues.length != 0 
+        ? costValues.reduce((sum, costValue) => (sum + costValue)) 
+        : 0;
+```
+
+<Tip>
+The cost function decreases with each iteration as centroids move toward optimal positions. Convergence occurs when the change in cost falls below a threshold.
+</Tip>
+
+## Choosing Between Crisp and Fuzzy
+
+Use **Crisp C-Means** when:
+- You need clear, distinct cluster assignments
+- Your data has well-separated natural groups
+- You want faster computation and simpler interpretation
+
+Use **Fuzzy C-Means** when:
+- Your data has overlapping or gradual boundaries
+- You need to model uncertainty in cluster membership
+- You want more nuanced cluster analysis
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Crisp C-Means" icon="circle-dot" href="/concepts/crisp-cmeans">
+    Learn about hard cluster assignments and binary membership
+  </Card>
+  <Card title="Fuzzy C-Means" icon="cloud" href="/concepts/fuzzy-cmeans">
+    Explore soft memberships and the fuzzification parameter
+  </Card>
+</CardGroup>

@@ -1,0 +1,224 @@
+---
+title: 'DataChart Component'
+description: 'Scatter plot visualization with dynamic color coding based on membership values'
+---
+
+## Overview
+
+The `DataChart` component renders an interactive scatter plot that visualizes data points, cluster centroids, and membership relationships using Chart.js. Points are dynamically colored based on their membership values to show cluster affinity.
+
+## Props
+
+<ParamField path="points" type="Point[]" required>
+  Array of data points to visualize. Each point must have `x` and `y` coordinates.
+</ParamField>
+
+<ParamField path="centroids" type="Point[]" required>
+  Array of cluster centroids. These are displayed with distinctive styling to differentiate them from regular data points.
+</ParamField>
+
+<ParamField path="membershipMatrix" type="number[][]" required>
+  A 2D array where `membershipMatrix[i][j]` represents the membership degree of point `j` in cluster `i`. Values range from 0 to 1. An empty array indicates no clustering has been performed.
+</ParamField>
+
+## Usage
+
+```tsx
+import DataChart from './components/DataChart';
+
+function App() {
+  const [points, setPoints] = useState<Point[]>([]);
+  const [centroids, setCentroids] = useState<Point[]>([]);
+  const [membershipMatrix, setMembershipMatrix] = useState<number[][]>([]);
+  
+  return (
+    <DataChart 
+      points={points}
+      centroids={centroids}
+      membershipMatrix={membershipMatrix}
+    />
+  );
+}
+```
+
+## Color Coding System
+
+The component uses a sophisticated color system to represent cluster membership:
+
+### Predefined Color Palette
+
+The chart uses 8 distinct hues that cycle for multiple clusters:
+
+```typescript
+// From source code: DataChart.tsx:5-7
+const centroidHues = [8, 205, 138, 44, 280, 328, 184, 112];
+
+const getCentroidHue = (index: number) => centroidHues[index % centroidHues.length];
+```
+
+These hues provide visual distinction between up to 8 clusters, with automatic cycling for additional clusters.
+
+### Point Color Calculation
+
+Points are colored based on their dominant cluster membership:
+
+```typescript
+// From source code: DataChart.tsx:9-39
+const getPointColor = (pointIndex: number, membershipMatrix: number[][]) => {
+  if (membershipMatrix.length === 0) {
+    return {
+      background: 'rgba(107, 114, 128, 0.55)',
+      border: 'rgba(75, 85, 99, 0.9)',
+    };
+  }
+
+  let dominantCluster = 0;
+  let highestMembership = membershipMatrix[0]?.[pointIndex] ?? 0;
+
+  for (let clusterIndex = 1; clusterIndex < membershipMatrix.length; clusterIndex++) {
+    const currentMembership = membershipMatrix[clusterIndex]?.[pointIndex] ?? 0;
+    if (currentMembership > highestMembership) {
+      highestMembership = currentMembership;
+      dominantCluster = clusterIndex;
+    }
+  }
+
+  const hue = getCentroidHue(dominantCluster);
+  const normalizedMembership = Math.max(0, Math.min(highestMembership, 1));
+  const saturation = 55 + normalizedMembership * 28;
+  const lightness = 82 - normalizedMembership * 30;
+  const borderLightness = Math.max(28, lightness - 18);
+  const alpha = 0.45 + normalizedMembership * 0.45;
+
+  return {
+    background: `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`,
+    border: `hsl(${hue}, ${Math.min(100, saturation + 6)}%, ${borderLightness}%)`,
+  };
+};
+```
+
+### How Membership Affects Point Colors
+
+The color intensity reflects the strength of cluster membership:
+
+1. **Dominant Cluster Selection** - The algorithm identifies which cluster has the highest membership value for each point
+
+2. **Color Base** - The point adopts the hue of its dominant cluster
+
+3. **Intensity Modulation** - Higher membership values result in:
+   - **Higher saturation** (55% to 83%)
+   - **Lower lightness** (82% down to 52%) - darker colors
+   - **Higher alpha** (0.45 to 0.9) - more opaque
+
+4. **Unclustered Points** - When the membership matrix is empty, points appear in neutral gray:
+   - Background: `rgba(107, 114, 128, 0.55)`
+   - Border: `rgba(75, 85, 99, 0.9)`
+
+This creates a visual gradient where:
+- **Strong membership** (close to 1.0) = bold, saturated, opaque colors
+- **Weak membership** (close to 0.0) = pale, desaturated, transparent colors
+- **No clustering** = neutral gray
+
+### Centroid Colors
+
+Centroids are displayed with bold, distinctive colors:
+
+```typescript
+// From source code: DataChart.tsx:49-57
+const centroidColors = centroids.map((_, centroidIndex) => {
+  const hue = getCentroidHue(centroidIndex);
+
+  return {
+    background: `hsla(${hue}, 75%, 48%, 0.9)`,
+    area: `hsla(${hue}, 72%, 52%, 0.22)`,
+    border: `hsl(${hue}, 78%, 30%)`,
+  };
+});
+```
+
+- **Background** - Highly saturated color at 75% saturation
+- **Area** - Semi-transparent ring around the centroid (radius 20)
+- **Border** - Dark border for definition
+
+## Chart Configuration
+
+The component renders three datasets:
+
+### 1. Points Dataset
+
+```typescript
+{
+  label: 'Points',
+  data: points,
+  backgroundColor: pointColors.map(({ background }) => background),
+  borderColor: pointColors.map(({ border }) => border),
+  borderWidth: 1,
+  pointRadius: 4,
+}
+```
+
+### 2. Centroids Dataset
+
+```typescript
+{
+  label: 'Centroids',
+  data: centroids,
+  backgroundColor: centroidColors.map(({ background }) => background),
+  borderColor: centroidColors.map(({ border }) => border),
+  borderWidth: 2,
+  pointRadius: 5,
+}
+```
+
+### 3. Centroids Area Dataset
+
+Creates a larger, semi-transparent circle around each centroid to show the cluster influence area:
+
+```typescript
+{
+  label: 'Centroids Area',
+  data: centroids,
+  backgroundColor: centroidColors.map(({ area }) => area),
+  borderColor: centroidColors.map(({ border }) => border),
+  borderWidth: 1,
+  pointRadius: 20,
+}
+```
+
+## Visual Hierarchy
+
+The component creates clear visual distinction:
+
+| Element | Radius | Border Width | Purpose |
+|---------|--------|--------------|----------|
+| Points | 4px | 1px | Show data distribution |
+| Centroids | 5px | 2px | Mark cluster centers |
+| Centroid Areas | 20px | 1px | Show cluster influence zones |
+
+## Chart Options
+
+The scatter plot includes axis configuration:
+
+```typescript
+options={{
+  scales: {
+    x: {
+      position: 'bottom',
+    },
+    y: {
+      position: 'left',
+    }
+  }
+}}
+```
+
+## Performance Considerations
+
+- Colors are computed once per render using `.map()`
+- The membership matrix is traversed to find dominant clusters
+- HSL color space allows smooth color interpolation
+- The component uses React-ChartJS-2 for efficient chart updates
+
+## Source Code
+
+View the full implementation in the repository: `src/components/DataChart.tsx`

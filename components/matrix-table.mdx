@@ -1,0 +1,201 @@
+---
+title: 'MatrixTable Component'
+description: 'Table component for displaying membership matrices with centroid-point relationships'
+---
+
+## Overview
+
+The `MatrixTable` component displays membership matrices in a tabular format, showing the degree of membership for each data point across all clusters. This provides a numerical view of the fuzzy clustering results.
+
+## Props
+
+<ParamField path="matrix" type="number[][]" required>
+  A 2D array representing the membership matrix where `matrix[i][j]` is the membership degree of point `j` in cluster `i`. Values range from 0 to 1, and for each point, the sum of memberships across all clusters equals 1.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  The title displayed above the table, typically "Membership Matrix" or a descriptive label for the matrix type.
+</ParamField>
+
+## Usage
+
+```tsx
+import MatrixTable from './components/MatrixTable';
+
+function App() {
+  const [membershipMatrix, setMembershipMatrix] = useState<number[][]>([]);
+  
+  return (
+    <MatrixTable 
+      matrix={membershipMatrix}
+      title="Membership Matrix"
+    />
+  );
+}
+```
+
+## Table Structure
+
+### Column Generation
+
+The component dynamically generates columns based on the number of points:
+
+```typescript
+// From source code: MatrixTable.tsx:10-26
+const columns = [{
+    title: `C`,
+    dataIndex: `centroid`,
+    key: `centroid`,
+    fixed: true
+}]
+
+if (matrix.length) {
+    columns.push(...matrix[0].map((_point, index) => ({
+        title: `P${index}`,
+        dataIndex: `${index}`,
+        key: index.toString(),
+        fixed: false
+    }))
+    )
+}
+```
+
+- **First Column**: `C` (Centroid index) - fixed to remain visible during horizontal scrolling
+- **Subsequent Columns**: `P0`, `P1`, `P2`, ... (Point indices) - one column per data point
+
+### Row Generation
+
+Each row represents a cluster's membership values across all points:
+
+```typescript
+// From source code: MatrixTable.tsx:28-34
+const dataSource = matrix.map((_row, index) => (
+    {
+        key: `row${index}`,
+        centroid: index,
+        ..._row.map((value) => (value.toFixed(4)))
+    }
+));
+```
+
+- Rows are indexed by centroid/cluster number
+- Membership values are formatted to 4 decimal places for readability
+- Spread operator unpacks the membership values into table columns
+
+## Matrix Interpretation
+
+### Reading the Table
+
+| C | P0 | P1 | P2 | P3 |
+|---|----|----|----|----|  
+| 0 | 0.9234 | 0.0821 | 0.8765 | 0.1234 |
+| 1 | 0.0766 | 0.9179 | 0.1235 | 0.8766 |
+
+In this example:
+- Point 0 (P0) has 92.34% membership in Cluster 0
+- Point 1 (P1) has 91.79% membership in Cluster 1  
+- Point 2 (P2) has 87.65% membership in Cluster 0
+- Point 3 (P3) has 87.66% membership in Cluster 1
+
+### Fuzzy Clustering Properties
+
+For each column (point), the sum of all membership values equals 1:
+
+```
+For Point j: Σ(matrix[i][j]) = 1, for all i from 0 to C-1
+```
+
+This constraint ensures that each point's total membership across all clusters is 100%.
+
+## Table Configuration
+
+The component uses Ant Design's `Table` with specific configurations:
+
+```tsx
+// From source code: MatrixTable.tsx:36-46
+<Table
+    title={() => <h3 className='text-xl font-semibold'>{title}:</h3>}
+    dataSource={dataSource}
+    columns={columns}
+    scroll={{ x: true, y: 300 }}
+    pagination={false}
+    className='matrix'
+    tableLayout='auto'
+/>
+```
+
+### Table Features
+
+<ParamField path="title" type="function">
+  Renders a custom title as an H3 heading with semibold styling
+</ParamField>
+
+<ParamField path="scroll" type="object">
+  Enables scrolling:
+  - **Horizontal** (`x: true`) - for tables with many points
+  - **Vertical** (`y: 300`) - limits height to 300px
+</ParamField>
+
+<ParamField path="pagination" type="boolean">
+  Disabled (`false`) to show all clusters at once
+</ParamField>
+
+<ParamField path="tableLayout" type="string">
+  Set to `'auto'` to automatically size columns based on content
+</ParamField>
+
+<ParamField path="className" type="string">
+  Custom class `'matrix'` for additional styling
+</ParamField>
+
+## Use Cases
+
+### Membership Matrix Display
+
+The primary use case is displaying the fuzzy c-means membership matrix after clustering:
+
+```tsx
+<MatrixTable 
+  matrix={membershipMatrix}
+  title="Membership Matrix"
+/>
+```
+
+### Distance Matrix Display
+
+Can also be used to display distance matrices or other 2D numerical data:
+
+```tsx
+<MatrixTable 
+  matrix={distanceMatrix}
+  title="Distance Matrix"
+/>
+```
+
+## Responsive Behavior
+
+- **Fixed First Column**: The centroid index column remains visible when scrolling horizontally
+- **Horizontal Scroll**: Automatically enabled for tables with many points
+- **Vertical Scroll**: Limited to 300px height to prevent excessive vertical space usage
+- **Auto Layout**: Columns size automatically to fit content
+
+## Data Formatting
+
+All numerical values are formatted to 4 decimal places:
+
+```typescript
+value.toFixed(4)
+```
+
+This provides sufficient precision for fuzzy membership values while maintaining readability.
+
+## Empty State
+
+When the matrix is empty (`matrix.length === 0`):
+- Only the centroid column header is displayed
+- No data rows are rendered
+- The table structure remains intact
+
+## Source Code
+
+View the full implementation in the repository: `src/components/MatrixTable.tsx`

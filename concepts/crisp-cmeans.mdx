@@ -1,0 +1,340 @@
+---
+title: "Crisp C-Means Algorithm"
+description: "Understanding hard cluster assignments and binary membership matrices"
+---
+
+## Overview
+
+Crisp C-Means (also called Hard C-Means or K-Means) is a clustering algorithm that assigns each data point to exactly one cluster. It's called "crisp" because membership is binary: a point either belongs to a cluster (membership = 1) or it doesn't (membership = 0).
+
+<Info>
+The algorithm iteratively refines cluster assignments by alternating between assigning points to their nearest centroid and updating centroids based on their assigned points.
+</Info>
+
+## Algorithm Steps
+
+The crisp C-Means algorithm follows these steps in each iteration:
+
+<Steps>
+  <Step title="Calculate Distance Matrix">
+    Compute Euclidean distances between all points and all centroids
+  </Step>
+  <Step title="Generate Membership Matrix">
+    Assign each point to its nearest centroid (binary assignment)
+  </Step>
+  <Step title="Update Centroids">
+    Calculate new centroid positions as the mean of assigned points
+  </Step>
+  <Step title="Compute Cost Function">
+    Calculate the total within-cluster distance to monitor convergence
+  </Step>
+</Steps>
+
+## Mathematical Formulation
+
+### Distance Matrix
+
+For C centroids and N points, the distance matrix **D** is a C × N matrix where:
+
+$$
+D_{ij} = \sqrt{(c_i^x - p_j^x)^2 + (c_i^y - p_j^y)^2}
+$$
+
+Where:
+- $D_{ij}$ is the distance from centroid $i$ to point $j$
+- $c_i$ is the position of centroid $i$
+- $p_j$ is the position of point $j$
+
+### Membership Matrix
+
+The membership matrix **U** is a C × N binary matrix where:
+
+$$
+U_{ij} = \begin{cases}
+1 & \text{if } D_{ij} = \min_k(D_{kj}) \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+Each column sums to 1 (each point belongs to exactly one cluster).
+
+### Centroid Update
+
+New centroids are calculated as the arithmetic mean of assigned points:
+
+$$
+c_i = \frac{\sum_{j=1}^{N} U_{ij} \cdot p_j}{\sum_{j=1}^{N} U_{ij}}
+$$
+
+### Cost Function
+
+The objective function minimizes within-cluster distances:
+
+$$
+J = \sum_{i=1}^{C} \sum_{j=1}^{N} U_{ij} \cdot D_{ij}
+$$
+
+## Implementation
+
+### Step 1: Calculate Distance Matrix
+
+The distance matrix computes Euclidean distances between all points and centroids:
+
+```typescript
+/**
+ * Calculates the distance matrix between each point and each centroid.
+ * 
+ * @param points - Array of points.
+ * @param centroids - Array of centroids.
+ * @returns A matrix of distances where each element [i][j] is the distance 
+ *          between the i-th centroid and the j-th point.
+ */
+export const getDistanceMatrix = (points: Point[], centroids: Point[]) => {
+    if (points.length === 0 || centroids.length === 0) {
+        return [];
+    }
+
+    const distanceMatrix = [];
+    for (let i = 0; i < centroids.length; i++) {
+        const distancesRow = [];
+        for (let j = 0; j < points.length; j++) {
+            const newDistance = euclidianDistance(centroids[i], points[j]);
+            distancesRow.push(newDistance);
+        }
+        distanceMatrix.push(distancesRow);
+    }
+    return distanceMatrix;
+}
+```
+
+### Step 2: Generate Binary Membership Matrix
+
+Each point is assigned to its nearest centroid:
+
+```typescript
+/**
+ * Generates the membership matrix from the distance matrix.
+ * 
+ * @param distanceMatrix - Matrix of distances between points and centroids.
+ * @returns A membership matrix where each element [i][j] is 1 if the j-th point 
+ *          belongs to the i-th centroid, otherwise 0.
+ */
+export const getMembershipMatrix = (distanceMatrix: number[][]) => {
+    if (distanceMatrix.length === 0) {
+        return [];
+    }
+
+    const membershipMatrix = [...zeroMatrix(distanceMatrix)];
+
+    // For each point (column)
+    for (let j = 0; j < distanceMatrix[0].length; j++) {
+        let min = distanceMatrix[0][j];
+        let minPosition = 0;
+
+        // Find the nearest centroid (row)
+        for (let i = 0; i < distanceMatrix.length; i++) {
+            if (distanceMatrix[i][j] < min) {
+                min = distanceMatrix[i][j];
+                minPosition = i;
+            }
+        }
+        // Assign point to nearest centroid
+        membershipMatrix[minPosition][j] = 1;
+    }
+    return membershipMatrix;
+}
+```
+
+<Note>
+The algorithm starts with a zero matrix and sets exactly one entry to 1 in each column, ensuring each point belongs to only one cluster.
+</Note>
+
+### Step 3: Update Centroids
+
+Centroids are recalculated as the mean position of their assigned points:
+
+```typescript
+/**
+ * Calculates new centroids based on the membership matrix.
+ * 
+ * @param points - Array of points.
+ * @param membershipMatrix - Membership matrix.
+ * @returns A new array of centroids calculated as the mean of all points 
+ *          belonging to each centroid.
+ */
+export const getNewCentroids = (points: Point[], membershipMatrix: number[][]) => {
+    const newCentroids = [];
+    for (let i = 0; i < membershipMatrix.length; i++) {
+        let sumaX = 0;
+        let sumaY = 0;
+        let cardinalidad = 0;
+
+        // Sum coordinates of all points in this cluster
+        for (let j = 0; j < membershipMatrix[0].length; j++) {
+            if (membershipMatrix[i][j] == 1) {
+                sumaX += points[j].x;
+                sumaY += points[j].y;
+                cardinalidad++;
+            }
+        }
+        
+        // Calculate mean position
+        const x = sumaX / cardinalidad;
+        const y = sumaY / cardinalidad;
+
+        if (cardinalidad !== 0) {
+            newCentroids.push({ x, y });
+        }
+    }
+    return newCentroids;
+}
+```
+
+### Step 4: Calculate Cost Function
+
+The cost measures the total distance of points from their assigned centroids:
+
+```typescript
+/**
+ * Calculates the cost values for each centroid based on the membership 
+ * and distance matrices.
+ * 
+ * @param membershipMatrix - Membership matrix.
+ * @param distanceMatrix - Distance matrix.
+ * @returns An array of cost values for each centroid.
+ */
+export const getCostValues = (membershipMatrix: number[][], distanceMatrix: number[][]) => {
+    if (membershipMatrix.length == 0 || distanceMatrix.length == 0) {
+        return [];
+    }
+    const costValues = [];
+
+    for (let i = 0; i < membershipMatrix.length; i++) {
+        let costValue = 0;
+        for (let j = 0; j < membershipMatrix[0].length; j++) {
+            if (membershipMatrix[i][j] == 1) {
+                costValue += distanceMatrix[i][j];
+            }
+        }
+        costValues.push(costValue);
+    }
+    return costValues;
+}
+
+/**
+ * Calculates the total cost from an array of individual cost values.
+ */
+export const getCostFunction = (costValues: number[]) => 
+    costValues.length != 0 
+        ? costValues.reduce((sum, costValue) => (sum + costValue)) 
+        : 0;
+```
+
+## Complete Iteration
+
+The main function executes one complete iteration:
+
+```typescript
+/**
+ * Executes one iteration of the C-means clustering algorithm.
+ * 
+ * @param points - Array of points.
+ * @param centroids - Array of centroids.
+ * @returns An object containing the distance matrix, membership matrix, 
+ *          new centroids, cost values, and total cost function.
+ */
+export const CMeans = (points: Point[], centroids: Point[]) => {
+    const distanceMatrix = getDistanceMatrix(points, centroids);
+    const membershipMatrix = getMembershipMatrix(distanceMatrix);
+    const newCentroids = getNewCentroids(points, membershipMatrix);
+    const costValues = getCostValues(membershipMatrix, distanceMatrix);
+    const costFunction = getCostFunction(costValues);
+
+    return {
+        distanceMatrix,
+        membershipMatrix,
+        newCentroids,
+        costValues,
+        costFunction,
+    }
+}
+```
+
+## Membership Matrix Structure
+
+### Binary Assignment Example
+
+Consider 3 clusters and 5 points:
+
+```
+Distance Matrix:
+        P1    P2    P3    P4    P5
+C1     2.5   8.3   9.1   3.2   7.6
+C2     7.8   1.9   8.5   6.4   2.3
+C3     9.2   7.1   2.0   8.9   2.8
+
+Membership Matrix (Binary):
+        P1    P2    P3    P4    P5
+C1      1     0     0     1     0
+C2      0     1     0     0     0
+C3      0     0     1     0     1
+```
+
+<Warning>
+If a centroid has no assigned points, it's removed from the clustering. This can happen if a centroid is initialized in a sparse region of the data space.
+</Warning>
+
+## Characteristics
+
+### Advantages
+
+- **Simple and intuitive**: Easy to understand and implement
+- **Fast computation**: Binary membership requires fewer calculations
+- **Clear boundaries**: Each point belongs to exactly one cluster
+- **Memory efficient**: Binary values compress well
+
+### Limitations
+
+- **Sensitive to initialization**: Poor initial centroids can lead to suboptimal results
+- **Assumes spherical clusters**: Works best when clusters are roughly circular
+- **Hard boundaries**: Cannot represent points that are between clusters
+- **Local minima**: May converge to local rather than global optima
+
+<Tip>
+Run the algorithm multiple times with different initializations and choose the result with the lowest cost function.
+</Tip>
+
+## Convergence
+
+The algorithm converges when:
+
+1. **Centroids stabilize**: New centroids match previous positions
+2. **Cost function plateaus**: Change in cost falls below a threshold
+3. **Maximum iterations reached**: Safety limit to prevent infinite loops
+
+```typescript
+// Example convergence check
+const hasConverged = (
+    Math.abs(previousCost - currentCost) < threshold
+);
+```
+
+## Use Cases
+
+Crisp C-Means works well for:
+
+- **Customer segmentation** with distinct groups
+- **Image compression** by clustering pixel colors
+- **Document classification** into clear categories
+- **Anomaly detection** by identifying distant points
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Fuzzy C-Means" icon="cloud" href="/concepts/fuzzy-cmeans">
+    Learn about soft cluster assignments and probabilistic membership
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/cmeans">
+    Explore the complete API documentation
+  </Card>
+</CardGroup>

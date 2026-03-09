@@ -1,0 +1,161 @@
+---
+title: "Membership Matrix Functions"
+description: "Functions for generating crisp and fuzzy membership matrices in clustering algorithms"
+---
+
+## Overview
+
+Membership matrices define how points are assigned to clusters. The library provides two types of membership calculations:
+
+- **Crisp membership**: Each point belongs to exactly one cluster (binary assignment)
+- **Fuzzy membership**: Each point can partially belong to multiple clusters (probabilistic assignment)
+
+## getMembershipMatrix
+
+Generates a crisp membership matrix from a distance matrix. Each point is assigned to exactly one cluster based on the nearest centroid.
+
+```typescript
+getMembershipMatrix(distanceMatrix: number[][]): number[][]
+```
+
+### Parameters
+
+<ParamField path="distanceMatrix" type="number[][]" required>
+  Matrix of distances between points and centroids, where `distanceMatrix[i][j]` represents the distance between centroid `i` and point `j`.
+</ParamField>
+
+### Returns
+
+<ResponseField name="membershipMatrix" type="number[][]">
+  A membership matrix where each element `[i][j]` is `1` if the j-th point belongs to the i-th centroid, otherwise `0`. Returns an empty array if the distance matrix is empty.
+</ResponseField>
+
+### Example
+
+```typescript
+import { getDistanceMatrix, getMembershipMatrix } from 'fuzzy-cmeans';
+
+const points = [
+  { x: 1, y: 1 },
+  { x: 5, y: 5 },
+  { x: 2, y: 2 }
+];
+
+const centroids = [
+  { x: 1.5, y: 1.5 },
+  { x: 5, y: 5 }
+];
+
+const distanceMatrix = getDistanceMatrix(points, centroids);
+const membershipMatrix = getMembershipMatrix(distanceMatrix);
+// Returns: [[1, 0, 1],  // Points 0 and 2 belong to cluster 0
+//           [0, 1, 0]]  // Point 1 belongs to cluster 1
+```
+
+<Note>
+  In crisp clustering, each point belongs to exactly one cluster. The membership value is binary: either 1 (belongs) or 0 (does not belong).
+</Note>
+
+---
+
+## getFuzzyMembershipMatrix
+
+Calculates a fuzzy membership matrix given a distance matrix and a fuzzification parameter. Points can have partial membership in multiple clusters.
+
+```typescript
+getFuzzyMembershipMatrix(distanceMatrix: number[][], fuzzyParameter: number): number[][]
+```
+
+### Parameters
+
+<ParamField path="distanceMatrix" type="number[][]" required>
+  Matrix of distances between points and centroids, where `distanceMatrix[i][j]` represents the distance between centroid `i` and point `j`.
+</ParamField>
+
+<ParamField path="fuzzyParameter" type="number" required>
+  Fuzzification parameter (typically denoted as `m`). Controls the degree of fuzziness in the clustering. Common values are between 1.5 and 3, with 2 being the most common choice.
+  
+  - Values closer to 1 make the clustering more crisp
+  - Higher values make the clustering more fuzzy
+</ParamField>
+
+### Returns
+
+<ResponseField name="membershipMatrix" type="number[][]">
+  A fuzzy membership matrix where each element `[i][j]` represents the degree of membership (between 0 and 1) of point `j` to cluster `i`. The sum of memberships for each point across all clusters equals 1. Returns an empty array if the distance matrix is empty.
+</ResponseField>
+
+### Example
+
+```typescript
+import { getDistanceMatrix, getFuzzyMembershipMatrix } from 'fuzzy-cmeans';
+
+const points = [
+  { x: 1, y: 1 },
+  { x: 5, y: 5 },
+  { x: 3, y: 3 }
+];
+
+const centroids = [
+  { x: 1.5, y: 1.5 },
+  { x: 4.5, y: 4.5 }
+];
+
+const distanceMatrix = getDistanceMatrix(points, centroids);
+const fuzzyMembershipMatrix = getFuzzyMembershipMatrix(distanceMatrix, 2);
+// Returns: [[0.95, 0.05, 0.52],  // Partial memberships to cluster 0
+//           [0.05, 0.95, 0.48]]  // Partial memberships to cluster 1
+// Note: Each column sums to 1.0
+```
+
+<Note>
+  In fuzzy clustering, each point has a membership degree in all clusters, with values between 0 and 1. The membership values for each point across all clusters sum to 1.
+</Note>
+
+### Mathematical Formula
+
+The fuzzy membership value is calculated using:
+
+```
+uᵢⱼ = 1 / Σₖ (dᵢⱼ / dₖⱼ)^(2/(m-1))
+```
+
+Where:
+- `uᵢⱼ` is the membership of point `j` to cluster `i`
+- `dᵢⱼ` is the distance from point `j` to centroid `i`
+- `m` is the fuzzification parameter
+- The sum is over all clusters `k`
+
+## Crisp vs Fuzzy Membership
+
+### Crisp Membership
+
+- **Binary assignment**: Each point belongs to exactly one cluster
+- **Hard boundaries**: Clear separation between clusters
+- **Use case**: When data has well-separated clusters
+
+### Fuzzy Membership
+
+- **Probabilistic assignment**: Each point can belong to multiple clusters with different degrees
+- **Soft boundaries**: Gradual transition between clusters
+- **Use case**: When data has overlapping clusters or unclear boundaries
+
+<CodeGroup>
+
+```typescript Crisp Example
+const crispMembership = getMembershipMatrix(distanceMatrix);
+// [[1, 0, 1],
+//  [0, 1, 0]]
+// Point 0: 100% cluster 0, 0% cluster 1
+// Point 1: 0% cluster 0, 100% cluster 1
+```
+
+```typescript Fuzzy Example
+const fuzzyMembership = getFuzzyMembershipMatrix(distanceMatrix, 2);
+// [[0.85, 0.15, 0.60],
+//  [0.15, 0.85, 0.40]]
+// Point 0: 85% cluster 0, 15% cluster 1
+// Point 1: 15% cluster 0, 85% cluster 1
+```
+
+</CodeGroup>

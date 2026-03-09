@@ -1,0 +1,105 @@
+---
+title: Introduction
+description: An interactive visualization tool for exploring crisp and fuzzy C-Means clustering algorithms in real time
+---
+
+## What is C-Means Algorithm Calculator?
+
+The C-Means Algorithm Calculator is an interactive web application built with Vite, React, and TypeScript that provides a hands-on experience for exploring clustering algorithms. It allows you to visualize and understand how both crisp and fuzzy C-Means clustering work by adding points, defining centroids, and watching the algorithms converge in real time.
+
+## What Problems Does It Solve?
+
+Understanding clustering algorithms can be challenging without visual feedback. This tool helps you:
+
+- **Visualize clustering behavior**: See how points are assigned to centroids and how centroids move with each iteration
+- **Compare algorithms**: Experience the difference between crisp (hard) and fuzzy (soft) clustering approaches
+- **Monitor convergence**: Track the cost function in real time to understand when the algorithm stabilizes
+- **Experiment freely**: Add points manually or generate random data sets to test different scenarios
+
+## Clustering Algorithms
+
+### Crisp C-Means
+
+The crisp variant assigns each point exclusively to the closest centroid. The membership matrix is binary (0 or 1), and centroids are updated using simple means:
+
+```typescript
+// Each point belongs to exactly one cluster
+if (distanceMatrix[i][j] < min) {
+    min = distanceMatrix[i][j];
+    minPosition = i;
+}
+membershipMatrix[minPosition][j] = 1;
+```
+
+From src/utils/CMeans.ts:42-60
+
+### Fuzzy C-Means
+
+The fuzzy variant allows partial membership across multiple clusters. Each point has a degree of membership to all centroids, with a fuzzification parameter (m=2) that controls the "softness" of the clustering:
+
+```typescript
+// Fuzzy membership calculation
+for (let k = 0; k < distanceMatrix.length; k++) {
+    if (distanceMatrix[k][j] !== 0) {
+        clusterSum += Math.pow(
+            (distanceMatrix[i][j] / distanceMatrix[k][j]), 
+            2 / (fuzzyParameter - 1)
+        );
+    }
+}
+const membershipValue = clusterSum !== 0 ? 1 / clusterSum : 1;
+```
+
+From src/utils/FuzzyCmeans.ts:15-36
+
+## Interactive Visualization Features
+
+The application provides comprehensive visual feedback through multiple components:
+
+<CardGroup cols={2}>
+  <Card title="Real-time Scatter Plots" icon="chart-scatter">
+    Uses Chart.js to render both points and centroids, color-coded by cluster membership
+  </Card>
+  
+  <Card title="Matrix Visualizations" icon="table">
+    Displays distance and membership matrices with precise decimal values for every iteration
+  </Card>
+  
+  <Card title="Cost Function Monitoring" icon="chart-line">
+    Shows the live cost function value (to 4 decimal places) to track convergence
+  </Card>
+  
+  <Card title="Tabular Data Views" icon="list">
+    Lists all point and centroid coordinates with four decimal precision
+  </Card>
+</CardGroup>
+
+## Key Features
+
+- **Flexible Input**: Add points and centroids manually with exact coordinates, or generate them randomly
+- **Algorithm Selection**: Switch between crisp and fuzzy C-Means implementations
+- **Iteration Control**: Step through the algorithm one iteration at a time to observe changes
+- **State Management**: Reset all data to start fresh experiments
+- **Responsive Design**: Built with Tailwind CSS and Ant Design for a polished, mobile-friendly interface
+
+## Tech Stack
+
+The application is built with modern web technologies:
+
+- **Vite + React 18**: Fast development and optimized production builds
+- **TypeScript**: Type-safe clustering algorithm implementations
+- **Ant Design**: Professional input controls, tables, and notifications
+- **Chart.js + react-chartjs-2**: Interactive scatter plot visualizations
+- **Tailwind CSS**: Responsive layout and utility-first styling
+
+## Get Started
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Clone the repository and install dependencies
+  </Card>
+  
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Run your first clustering iteration
+  </Card>
+</CardGroup>

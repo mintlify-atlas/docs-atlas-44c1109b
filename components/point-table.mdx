@@ -1,0 +1,234 @@
+---
+title: 'PointTable Component'
+description: 'Component for displaying point and centroid coordinates in a compact table format'
+---
+
+## Overview
+
+The `PointTable` component renders a simple, compact table that displays the X and Y coordinates of data points or centroids. It provides a clear numerical view of point positions in the clustering space.
+
+## Props
+
+<ParamField path="data" type="Point[]" required>
+  Array of points to display. Each point must have `x` and `y` coordinates.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  The title displayed above the table, typically "Points" or "Centroids" to indicate what data is being shown.
+</ParamField>
+
+## Point Type
+
+The component uses the global `Point` type:
+
+```typescript
+type Point = {
+    x: number,
+    y: number
+}
+```
+
+## Usage
+
+### Displaying Data Points
+
+```tsx
+import PointTable from './components/PointTable';
+
+function App() {
+  const [points, setPoints] = useState<Point[]>([]);
+  
+  return (
+    <PointTable 
+      data={points}
+      title="Points"
+    />
+  );
+}
+```
+
+### Displaying Centroids
+
+```tsx
+import PointTable from './components/PointTable';
+
+function App() {
+  const [centroids, setCentroids] = useState<Point[]>([]);
+  
+  return (
+    <PointTable 
+      data={centroids}
+      title="Centroids"
+    />
+  );
+}
+```
+
+## Data Source Transformation
+
+The component transforms the point array into a table-friendly format:
+
+```typescript
+// From source code: PointTable.tsx:9-14
+const dataSource = data.map((point, index) => ({
+    key: index.toString(),
+    name: `Point ${index + 1}`,
+    x: point.x.toFixed(4),
+    y: point.y.toFixed(4),
+}))
+```
+
+- **key**: Unique identifier for React rendering (string index)
+- **name**: Human-readable label ("Point 1", "Point 2", etc.)
+- **x**: X-coordinate formatted to 4 decimal places
+- **y**: Y-coordinate formatted to 4 decimal places
+
+## Column Configuration
+
+The table displays two columns:
+
+```typescript
+// From source code: PointTable.tsx:17-20
+const columns = [
+    { title: 'X', dataIndex: 'x', key: 'x', },
+    { title: 'Y', dataIndex: 'y', key: 'y', },
+]
+```
+
+Note: The `name` field is generated but not displayed in columns. It's available for potential expansion or use in row rendering.
+
+## Table Example
+
+| X | Y |
+|---|---|
+| 45.2341 | 67.8901 |
+| 12.3456 | 98.7654 |
+| 78.9012 | 34.5678 |
+
+## Table Configuration
+
+The component uses Ant Design's `Table` with specific settings optimized for small datasets:
+
+```tsx
+// From source code: PointTable.tsx:22-30
+<Table
+    title={() => <h1 className="text-lg font-semibold">{title}:</h1>}
+    dataSource={dataSource}
+    columns={columns}
+    pagination={false}
+    scroll={{ x: true, y: 150 }}
+    size="small"
+/>
+```
+
+### Configuration Properties
+
+<ParamField path="title" type="function">
+  Renders a custom title as an H1 heading with semibold styling and large text
+</ParamField>
+
+<ParamField path="pagination" type="boolean">
+  Disabled (`false`) to show all points at once without pagination controls
+</ParamField>
+
+<ParamField path="scroll" type="object">
+  Enables scrolling:
+  - **Horizontal** (`x: true`) - ensures table is responsive on narrow screens
+  - **Vertical** (`y: 150`) - limits height to 150px to conserve screen space
+</ParamField>
+
+<ParamField path="size" type="string">
+  Set to `'small'` for compact row spacing, ideal for coordinate lists
+</ParamField>
+
+## Data Formatting
+
+Coordinates are formatted to 4 decimal places for consistency:
+
+```typescript
+point.x.toFixed(4)
+point.y.toFixed(4)
+```
+
+This provides:
+- Sufficient precision for clustering visualization
+- Consistent column width
+- Clean, readable display
+- Alignment of decimal points
+
+## Responsive Behavior
+
+### Vertical Scrolling
+
+The table height is limited to 150px:
+- Prevents excessive vertical space usage
+- Useful when displaying many points
+- Maintains visibility of other UI elements
+- Automatic scrollbar appears when needed
+
+### Horizontal Scrolling
+
+Enabled for narrow viewports:
+- Ensures the table remains usable on mobile devices
+- Both columns remain accessible
+- No content is hidden or truncated
+
+## Empty State
+
+When the data array is empty (`data.length === 0`):
+- The table renders with column headers
+- No rows are displayed
+- The title and structure remain intact
+- Users can see where points will appear once added
+
+## Use Cases
+
+### Points Display
+
+Display all data points being clustered:
+
+```tsx
+<PointTable data={points} title="Data Points" />
+```
+
+### Centroids Display
+
+Show the current cluster centers:
+
+```tsx
+<PointTable data={centroids} title="Cluster Centroids" />
+```
+
+### Side-by-Side Comparison
+
+Display both points and centroids for comparison:
+
+```tsx
+<div className="flex gap-4">
+  <PointTable data={points} title="Points" />
+  <PointTable data={centroids} title="Centroids" />
+</div>
+```
+
+## Styling
+
+The component uses:
+- **Tailwind CSS** for title styling (`text-lg font-semibold`)
+- **Ant Design** default table styling
+- **Small size** variant for compact display
+
+## Performance
+
+The component is optimized for small to medium datasets:
+- No pagination reduces complexity
+- Simple transformation with `.map()`
+- Fixed column count (always 2)
+- Lightweight rendering
+
+<Note>
+For very large datasets (1000+ points), consider adding pagination or virtualization to maintain performance.
+</Note>
+
+## Source Code
+
+View the full implementation in the repository: `src/components/PointTable.tsx`

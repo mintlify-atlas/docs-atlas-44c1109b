@@ -1,80 +1,323 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Run your first clustering iteration with the C-Means Algorithm Calculator
 ---
 
-## Get started in three steps
+## Your First Clustering Iteration
 
-Get your documentation site running locally and make your first customization.
+This guide will walk you through adding data points, defining centroids, and running the clustering algorithm to see real-time results.
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Add Data Points">
+    Start by adding some data points to cluster. You have two options:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    **Option 1: Manual Entry**
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    1. In the **Add Point** section (left side), enter X and Y coordinates
+    2. Click the **Add Point** button
+    3. Repeat to add multiple points
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```typescript
+    // Example points you might add:
+    // Point 1: (10, 20)
+    // Point 2: (15, 18)
+    // Point 3: (50, 60)
+    // Point 4: (55, 65)
+    ```
+    
+    **Option 2: Random Generation**
+    
+    Click the **Random Point** button to automatically generate a random point with coordinates between -100 and 100:
+    
+    ```typescript
+    // From src/utils/CMeans.ts:178-188
+    export function generateRandomPoints(n: number) {
+        const points = [];
+        for (let i = 0; i < n; i++) {
+            const point = {
+                x: Math.floor(Math.random() * 201) - 100,
+                y: Math.floor(Math.random() * 201) - 100,
+            };
+            points.push(point);
+        }
+        return points as Point[];
+    }
+    ```
+    
+    <Tip>
+      Add at least 4-6 points to see meaningful clustering behavior.
+    </Tip>
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Define Initial Centroids">
+    Now add centroids that will serve as the initial cluster centers:
+    
+    1. In the **Add Centroid** section (right side), enter X and Y coordinates
+    2. Click the **Add Centroid** button
+    3. Add 2-3 centroids to create distinct clusters
+    
+    ```typescript
+    // Example centroids:
+    // Centroid 1: (12, 19)  // Near the first group of points
+    // Centroid 2: (52, 62)  // Near the second group of points
+    ```
+    
+    <Note>
+      The number of centroids determines the number of clusters (k). For your first try, use 2-3 centroids.
+    </Note>
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Observe the Initial State">
+    After adding points and centroids, you'll see:
+    
+    - **Points Table**: Lists all your data points with coordinates (4 decimal places)
+    - **Centroids Table**: Shows your initial centroid positions
+    - **Scatter Plot**: Visualizes points and centroids on a Chart.js graph
+    - **Cost Function**: Displays as 0.0000 before the first iteration
+    - **Distance Matrix**: Empty until you iterate
+    - **Membership Matrix**: Empty until you iterate
+  </Step>
 
-### Step 3: Go live
+  <Step title="Run the First Iteration">
+    Click the **Iterate** button to execute one step of the fuzzy C-Means algorithm.
+    
+    Behind the scenes, the `useCMeans` hook executes:
+    
+    ```typescript
+    // From src/utils/useCmeans.ts:38-50
+    const onIterate = () => {
+        if (newCentroids.length <= 0) {
+            notification.error({
+                message: 'Error',
+                description: 'There are not enough points or centroids to start an iteration of the algorithm!',
+                duration: 3,
+                placement: 'bottomLeft'
+            });
+            return
+        }
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+        setCentroids(newCentroids); // Update the centroids
+    };
+    ```
+    
+    The algorithm performs these calculations:
+    
+    1. **Distance Matrix**: Calculates Euclidean distance between each point and centroid
+    2. **Membership Matrix**: Computes fuzzy membership values (soft assignment)
+    3. **New Centroids**: Recalculates centroid positions based on weighted membership
+    4. **Cost Function**: Sums the weighted squared distances
+    
+    <Info>
+      The default algorithm is fuzzy C-Means with fuzzification parameter m=2. This is set in src/App.tsx:16.
+    </Info>
+  </Step>
 
-## Next steps
+  <Step title="Analyze the Results">
+    After the first iteration, examine the updated interface:
+    
+    **Distance Matrix**
+    
+    Shows Euclidean distances calculated by:
+    
+    ```typescript
+    // From src/utils/CMeans.ts:32-35
+    export const euclidianDistance = (pointA: Point, pointB: Point) => {
+        const distance = Math.sqrt(
+            Math.pow((pointA.x - pointB.x), 2) + Math.pow((pointA.y - pointB.y), 2)
+        );
+        return distance;
+    }
+    ```
+    
+    **Membership Matrix**
+    
+    For fuzzy C-Means, values are continuous (0 to 1) representing partial membership:
+    
+    ```typescript
+    // From src/utils/FuzzyCmeans.ts:22-31
+    for (let k = 0; k < distanceMatrix.length; k++) {
+        if (distanceMatrix[k][j] !== 0) {
+            clusterSum += Math.pow(
+                (distanceMatrix[i][j] / distanceMatrix[k][j]), 
+                2 / (fuzzyParameter - 1)
+            );
+        }
+    }
+    const membershipValue = clusterSum !== 0 ? 1 / clusterSum : 1;
+    ```
+    
+    **Updated Scatter Plot**
+    
+    Points are now color-coded by their dominant cluster membership, and centroids have moved to new positions.
+    
+    **Cost Function**
+    
+    The cost function shows the total clustering error:
+    
+    ```typescript
+    // From src/utils/FuzzyCmeans.ts:79-92
+    export const getFuzzyCostValues = (distanceMatrix: number[][], membershipMatrix: number[][], fuzzyParameter: number): number[] => {
+        const costValues: number[] = [];
+        for (let i = 0; i < distanceMatrix.length; i++) {
+            let costValue = 0;
+            for (let j = 0; j < distanceMatrix[0].length; j++) {
+                costValue += Math.pow(membershipMatrix[i][j], fuzzyParameter) * Math.pow(distanceMatrix[i][j], 2);
+            }
+            costValues.push(costValue);
+        }
+        return costValues;
+    }
+    ```
+  </Step>
 
-Now that you have your docs running, explore these key features:
+  <Step title="Continue Iterating">
+    Keep clicking **Iterate** to run additional iterations. Watch for:
+    
+    - **Centroid movement**: Centroids shift toward the center of their clusters
+    - **Decreasing cost**: The cost function should decrease with each iteration
+    - **Stabilization**: Eventually, centroids stop moving and the cost plateaus (convergence)
+    
+    <Tip>
+      Typical convergence takes 5-15 iterations depending on your data and initial centroid positions.
+    </Tip>
+  </Step>
 
-<CardGroup cols={2}>
+  <Step title="Reset and Experiment">
+    Click the **Reset** button to clear all points and centroids:
+    
+    ```typescript
+    // From src/utils/useCmeans.ts:52-55
+    const onReset = () => {
+        setCentroids([]);
+        setPoints([]);
+    };
+    ```
+    
+    Try different scenarios:
+    - More clusters (add 4-5 centroids)
+    - Different point distributions
+    - Comparing crisp vs. fuzzy behavior (requires code modification in src/App.tsx:16)
+  </Step>
+</Steps>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+## Understanding the Algorithm Flow
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+The `useCMeans` hook orchestrates the entire clustering process:
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+```typescript
+// From src/utils/useCmeans.ts:18-28
+const cMeansFunction = useMemo(() => {
+    return algorithm === 'fuzzy' ? fuzzyCMeans : CMeans;
+}, [algorithm]);
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+const {
+    distanceMatrix,
+    membershipMatrix,
+    newCentroids,
+    costValues,
+    costFunction,
+} = useMemo(() => cMeansFunction(points, centroids), [cMeansFunction, points, centroids]);
+```
 
-</CardGroup>
+Each iteration updates the state, triggering React to re-render all matrices, charts, and tables with fresh data.
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Crisp vs. Fuzzy Comparison
+
+### Crisp C-Means (Hard Clustering)
+
+- **Membership**: Binary (0 or 1) - each point belongs to exactly one cluster
+- **Centroid Update**: Simple mean of assigned points
+- **Use Case**: When clusters are well-separated and non-overlapping
+
+```typescript
+// From src/utils/CMeans.ts:92-114
+export const getNewCentroids = (points: Point[], membershipMatrix: number[][]) => {
+    const newCentroids = [];
+    for (let i = 0; i < membershipMatrix.length; i++) {
+        let sumaX = 0;
+        let sumaY = 0;
+        let cardinalidad = 0;
+
+        for (let j = 0; j < membershipMatrix[0].length; j++) {
+            if (membershipMatrix[i][j] == 1) {
+                sumaX += points[j].x;
+                sumaY += points[j].y;
+                cardinalidad++;
+            }
+        }
+        const x = sumaX / cardinalidad;
+        const y = sumaY / cardinalidad;
+
+        if (cardinalidad !== 0) {
+            newCentroids.push({ x, y });
+        }
+    }
+    return newCentroids;
+}
+```
+
+### Fuzzy C-Means (Soft Clustering)
+
+- **Membership**: Continuous (0 to 1) - points can partially belong to multiple clusters
+- **Centroid Update**: Weighted mean using membership degrees raised to power m
+- **Use Case**: When clusters overlap or boundaries are unclear
+
+```typescript
+// From src/utils/FuzzyCmeans.ts:47-68
+export const getNewFuzzyCentroids = (points: Point[], membershipMatrix: number[][], fuzzyParameter: number): Point[] => {
+    const newCentroids: Point[] = [];
+    for (let i = 0; i < membershipMatrix.length; i++) {
+        let membershipx = 0;
+        let membershipy = 0;
+        let membership = 0;
+        for (let j = 0; j < membershipMatrix[0].length; j++) {
+            const squareMembership = Math.pow(membershipMatrix[i][j], fuzzyParameter);
+            membership += squareMembership;
+            membershipx += squareMembership * points[j].x;
+            membershipy += squareMembership * points[j].y;
+        }
+        const x = membershipx / membership;
+        const y = membershipy / membership;
+
+        newCentroids.push({ x, y });
+    }
+    return newCentroids;
+}
+```
+
+## Common Patterns and Tips
+
+### Achieving Good Convergence
+
+1. **Initial Centroids**: Place them in different regions of your data space
+2. **Sufficient Points**: Use at least 3-4 points per cluster
+3. **Iterations**: Run until the cost function change is minimal (< 0.01)
+
+### Monitoring Convergence
+
+Watch the cost function displayed at the top of the interface:
+
+```typescript
+// From src/App.tsx:40
+<h2 className="text-xl font-semibold">Cost Function: {costFunction.toFixed(4) ?? 0}</h2>
+```
+
+When the cost stops decreasing significantly between iterations, the algorithm has converged.
+
+### Handling Edge Cases
+
+If you see an error notification:
+
+<Warning>
+  "There are not enough points or centroids to start an iteration of the algorithm!"
+</Warning>
+
+This means you need to add at least one point and one centroid before clicking Iterate.
+
+## Next Steps
+
+Now that you understand the basics:
+
+- Explore the detailed algorithm implementations in the API Reference
+- Learn about component architecture in the Components section
+- Customize the fuzzification parameter or add algorithm switching in the Advanced Usage guide

@@ -1,0 +1,108 @@
+---
+title: "Distance Matrix Functions"
+description: "Functions for calculating distance matrices and Euclidean distances between points and centroids"
+---
+
+## Overview
+
+The distance matrix functions are fundamental utilities for calculating distances between points and centroids in clustering algorithms. These functions form the basis for both crisp and fuzzy C-means clustering.
+
+## getDistanceMatrix
+
+Calculates the distance matrix between each point and each centroid.
+
+```typescript
+getDistanceMatrix(points: Point[], centroids: Point[]): number[][]
+```
+
+### Parameters
+
+<ParamField path="points" type="Point[]" required>
+  Array of points to calculate distances from. Each point should have `x` and `y` coordinates.
+</ParamField>
+
+<ParamField path="centroids" type="Point[]" required>
+  Array of centroids to calculate distances to. Each centroid should have `x` and `y` coordinates.
+</ParamField>
+
+### Returns
+
+<ResponseField name="distanceMatrix" type="number[][]">
+  A matrix of distances where each element `[i][j]` is the distance between the i-th centroid and the j-th point. Returns an empty array if either `points` or `centroids` is empty.
+</ResponseField>
+
+### Example
+
+```typescript
+import { getDistanceMatrix } from 'fuzzy-cmeans';
+
+const points = [
+  { x: 1, y: 2 },
+  { x: 3, y: 4 },
+  { x: 5, y: 6 }
+];
+
+const centroids = [
+  { x: 2, y: 3 },
+  { x: 4, y: 5 }
+];
+
+const distanceMatrix = getDistanceMatrix(points, centroids);
+// Returns: [[distance(c1,p1), distance(c1,p2), distance(c1,p3)],
+//           [distance(c2,p1), distance(c2,p2), distance(c2,p3)]]
+```
+
+---
+
+## euclidianDistance
+
+Calculates the Euclidean distance between two points.
+
+```typescript
+euclidianDistance(pointA: Point, pointB: Point): number
+```
+
+### Parameters
+
+<ParamField path="pointA" type="Point" required>
+  First point with `x` and `y` coordinates.
+</ParamField>
+
+<ParamField path="pointB" type="Point" required>
+  Second point with `x` and `y` coordinates.
+</ParamField>
+
+### Returns
+
+<ResponseField name="distance" type="number">
+  The Euclidean distance between the two points, calculated as `√((x₁ - x₂)² + (y₁ - y₂)²)`.
+</ResponseField>
+
+### Example
+
+```typescript
+import { euclidianDistance } from 'fuzzy-cmeans';
+
+const pointA = { x: 0, y: 0 };
+const pointB = { x: 3, y: 4 };
+
+const distance = euclidianDistance(pointA, pointB);
+// Returns: 5 (since √(3² + 4²) = √25 = 5)
+```
+
+<Note>
+  The Euclidean distance formula is used extensively throughout the clustering algorithms. It represents the straight-line distance between two points in 2D space.
+</Note>
+
+### Mathematical Formula
+
+The Euclidean distance is calculated using the formula:
+
+```
+d(A, B) = √((xₐ - xᵦ)² + (yₐ - yᵦ)²)
+```
+
+Where:
+- `A` and `B` are two points in 2D space
+- `xₐ, yₐ` are the coordinates of point A
+- `xᵦ, yᵦ` are the coordinates of point B

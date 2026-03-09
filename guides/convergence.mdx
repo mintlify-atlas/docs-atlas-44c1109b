@@ -1,0 +1,352 @@
+---
+title: Monitoring Convergence
+description: Learn how to track algorithm convergence, interpret the cost function, and determine when to stop iterating
+---
+
+Convergence is the process by which the C-Means algorithm reaches a stable, optimal clustering solution. Understanding when and how the algorithm converges is crucial for effective use.
+
+## Understanding the Cost Function
+
+The cost function quantifies how well the current clustering solution fits the data. It represents the total distance of all points from their assigned centroids.
+
+### Cost Function Calculation
+
+The cost function is computed in two stages:
+
+#### 1. Calculate Cost Values per Cluster
+
+For each centroid, sum the distances of all points assigned to that cluster:
+
+```ts
+// From CMeans.ts:123-139
+export const getCostValues = (membershipMatrix: number[][], distanceMatrix: number[][]) => {
+    if (membershipMatrix.length == 0 || distanceMatrix.length == 0) {
+        return [];
+    }
+    const costValues = [];
+
+    for (let i = 0; i < membershipMatrix.length; i++) {
+        let costValue = 0;
+        for (let j = 0; j < membershipMatrix[0].length; j++) {
+            if (membershipMatrix[i][j] == 1) {
+                costValue += distanceMatrix[i][j];
+            }
+        }
+        costValues.push(costValue);
+    }
+    return costValues;
+}
+```
+
+#### 2. Sum All Cost Values
+
+The total cost function is the sum of individual cluster costs:
+
+```ts
+// From CMeans.ts:147
+export const getCostFunction = (costValues: number[]) => costValues.length != 0 ? costValues.reduce((sum, costValue) => (sum + costValue)) : 0;
+```
+
+<Info>
+A lower cost function value indicates a better clustering solution. The algorithm aims to minimize this value with each iteration.
+</Info>
+
+### What the Cost Function Represents
+
+<CardGroup cols={2}>
+  <Card title="Cluster Compactness" icon="compress">
+    Lower values mean points are closer to their assigned centroids, indicating tight, well-defined clusters
+  </Card>
+  
+  <Card title="Solution Quality" icon="star">
+    The cost function serves as an objective measure of clustering quality that can be tracked over time
+  </Card>
+  
+  <Card title="Optimization Progress" icon="chart-line">
+    Decreasing values across iterations show the algorithm is improving the solution
+  </Card>
+  
+  <Card title="Convergence Indicator" icon="bullseye">
+    When the value stops changing, the algorithm has found a stable solution
+  </Card>
+</CardGroup>
+
+## The Iteration Process
+
+Each iteration executes a complete cycle of the C-Means algorithm:
+
+```ts
+// From CMeans.ts:156-170
+export const CMeans = (points: Point[], centroids: Point[]) => {
+    const distanceMatrix = getDistanceMatrix(points, centroids);
+    const membershipMatrix = getMembershipMatrix(distanceMatrix);
+    const newCentroids = getNewCentroids(points, membershipMatrix);
+    const costValues = getCostValues(membershipMatrix, distanceMatrix);
+    const costFunction = getCostFunction(costValues);
+
+    return {
+        distanceMatrix,
+        membershipMatrix,
+        newCentroids,
+        costValues,
+        costFunction,
+    }
+}
+```
+
+### Steps in Each Iteration
+
+<Steps>
+  <Step title="Calculate Distance Matrix">
+    Compute Euclidean distances between all points and all centroids
+  </Step>
+  
+  <Step title="Update Membership Matrix">
+    Assign each point to its nearest centroid based on minimum distance
+  </Step>
+  
+  <Step title="Recalculate Centroids">
+    Move each centroid to the mean position of all points assigned to it
+  </Step>
+  
+  <Step title="Compute Cost Function">
+    Calculate the total cost of the current clustering configuration
+  </Step>
+</Steps>
+
+### Centroid Recalculation
+
+New centroid positions are computed as the mean of assigned points:
+
+```ts
+// From CMeans.ts:92-114
+export const getNewCentroids = (points: Point[], membershipMatrix: number[][]) => {
+    const newCentroids = [];
+    for (let i = 0; i < membershipMatrix.length; i++) {
+        let sumaX = 0;
+        let sumaY = 0;
+        let cardinalidad = 0;
+
+        for (let j = 0; j < membershipMatrix[0].length; j++) {
+            if (membershipMatrix[i][j] == 1) {
+                sumaX += points[j].x;
+                sumaY += points[j].y;
+                cardinalidad++;
+            }
+        }
+        const x = sumaX / cardinalidad;
+        const y = sumaY / cardinalidad;
+
+        if (cardinalidad !== 0) {
+            newCentroids.push({ x, y });
+        }
+    }
+    return newCentroids;
+}
+```
+
+<Note>
+Centroids move toward the geometric center of their assigned points. This movement is what drives the algorithm toward an optimal solution.
+</Note>
+
+## Recognizing Convergence
+
+Convergence occurs when the algorithm reaches a stable state where further iterations produce no meaningful improvements.
+
+### Signs of Convergence
+
+<CardGroup cols={2}>
+  <Card title="Stable Cost Function" icon="equals">
+    The cost function value remains constant or changes by very small amounts between iterations
+  </Card>
+  
+  <Card title="Fixed Memberships" icon="lock">
+    Points no longer switch between clusters; the membership matrix stays the same
+  </Card>
+  
+  <Card title="Stationary Centroids" icon="location-dot">
+    Centroid positions stop moving or move by imperceptible amounts
+  </Card>
+  
+  <Card title="Visual Stability" icon="image">
+    The scatter plot visualization shows no visible changes between iterations
+  </Card>
+</CardGroup>
+
+### Typical Convergence Patterns
+
+#### Fast Initial Improvement
+
+In most cases, you'll see:
+- **Iterations 1-3**: Rapid decrease in cost function as major cluster boundaries form
+- **Iterations 4-6**: Slower decrease as fine-tuning occurs
+- **Iterations 7+**: Minimal or no change indicating convergence
+
+#### Example Convergence Sequence
+
+```
+Iteration 0: Cost = 1247.3521  (Initial state)
+Iteration 1: Cost = 843.2156   (Large improvement)
+Iteration 2: Cost = 678.9023   (Significant improvement)
+Iteration 3: Cost = 632.4891   (Moderate improvement)
+Iteration 4: Cost = 618.2347   (Small improvement)
+Iteration 5: Cost = 615.8234   (Minimal improvement)
+Iteration 6: Cost = 615.8234   (No change - converged)
+```
+
+<Tip>
+Most simple datasets converge within 5-10 iterations. Complex datasets with overlapping clusters may require more iterations.
+</Tip>
+
+## When to Stop Iterating
+
+Knowing when to stop is important for efficiency and avoiding unnecessary computation.
+
+### Stopping Criteria
+
+<Steps>
+  <Step title="Cost Function Plateaus">
+    If the cost function hasn't changed (or changed by less than 0.001) for 2-3 consecutive iterations, the algorithm has converged
+  </Step>
+  
+  <Step title="Visual Confirmation">
+    Check the scatter plot - if centroids and point colors aren't changing, you've reached convergence
+  </Step>
+  
+  <Step title="Membership Stability">
+    Examine the membership matrix - if it's identical to the previous iteration, convergence is achieved
+  </Step>
+</Steps>
+
+### Practical Guidelines
+
+<CardGroup cols={2}>
+  <Card title="Initial Dataset" icon="play">
+    Always run at least 3-5 iterations to allow the algorithm to escape poor initial positions
+  </Card>
+  
+  <Card title="Monitor Progress" icon="chart-line">
+    Track the cost function value displayed in the interface after each iteration
+  </Card>
+  
+  <Card title="Check Visually" icon="eye">
+    Use the scatter plot to verify that clusters look well-formed and stable
+  </Card>
+  
+  <Card title="Don't Over-iterate" icon="stop">
+    Once converged, additional iterations provide no benefit and are unnecessary
+  </Card>
+</CardGroup>
+
+## Non-Convergence Scenarios
+
+Sometimes the algorithm may not converge to a good solution:
+
+### Poor Initial Centroid Placement
+
+<Warning>
+If multiple centroids start very close together, they may end up competing for the same points, leading to empty clusters or suboptimal results.
+</Warning>
+
+**Solution**: Use the Reset button and try different initial centroid positions.
+
+### Insufficient Centroids
+
+If you have distinct clusters in your data but fewer centroids, the algorithm will converge but to a suboptimal solution.
+
+**Solution**: Add more centroids to match the expected number of natural clusters in your data.
+
+### Outlier Points
+
+Extreme outlier points can pull centroids away from natural cluster centers, increasing the cost function.
+
+**Solution**: Review your data points and consider removing obvious outliers before running the algorithm.
+
+## Monitoring in the Interface
+
+The interface provides real-time feedback on convergence:
+
+```tsx
+// From App.tsx:39-41
+<section className="px-3 mt-4 flex justify-center py-2">
+  <h2 className="text-xl font-semibold">Cost Function: {costFunction.toFixed(4) ?? 0}</h2>
+</section>
+```
+
+### Best Practices for Monitoring
+
+<Steps>
+  <Step title="Record Initial Value">
+    Note the cost function value before starting iterations to establish a baseline
+  </Step>
+  
+  <Step title="Track Each Iteration">
+    Record the cost function after each click of the Iterate button
+  </Step>
+  
+  <Step title="Calculate Change">
+    Compute the difference between consecutive iterations to quantify improvement
+  </Step>
+  
+  <Step title="Stop When Stable">
+    When the change drops below a threshold (e.g., 0.01), consider the algorithm converged
+  </Step>
+</Steps>
+
+## Advanced Convergence Analysis
+
+### Cost Function Components
+
+The total cost is the sum of per-cluster costs:
+
+```ts
+// Each cluster contributes to the total cost
+cluster_0_cost + cluster_1_cost + cluster_2_cost + ... = total_cost
+```
+
+You can analyze individual cluster quality by examining cost values:
+- **Low cluster cost**: Compact, well-defined cluster
+- **High cluster cost**: Dispersed cluster or outliers present
+
+### Iteration Efficiency
+
+Typical convergence rates:
+- **Well-separated clusters**: 3-5 iterations
+- **Overlapping clusters**: 6-10 iterations  
+- **Poor initialization**: 10+ iterations or non-convergence
+
+<Info>
+If convergence takes more than 15 iterations, consider resetting and trying different initial centroid positions.
+</Info>
+
+## Testing Convergence
+
+To verify the algorithm has truly converged:
+
+<Steps>
+  <Step title="Run One More Iteration">
+    Click Iterate once more after you think convergence has occurred
+  </Step>
+  
+  <Step title="Compare Results">
+    Check if the cost function, membership matrix, and visualization remain identical
+  </Step>
+  
+  <Step title="Confirm Stability">
+    If nothing changed, convergence is confirmed; if changes occurred, continue iterating
+  </Step>
+</Steps>
+
+## Next Steps
+
+Now that you understand convergence, you can effectively use the C-Means algorithm:
+
+<CardGroup cols={2}>
+  <Card title="Using the Interface" icon="desktop" href="/guides/using-the-interface">
+    Master all interface controls and data input methods
+  </Card>
+  
+  <Card title="Understanding Results" icon="chart-simple" href="/guides/understanding-results">
+    Learn to interpret matrices and visualizations
+  </Card>
+</CardGroup>

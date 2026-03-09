@@ -1,0 +1,229 @@
+---
+title: Using the Interface
+description: Learn how to interact with the C-Means clustering interface to add data points, configure centroids, and control the algorithm
+---
+
+The C-Means Calculator provides an interactive interface for visualizing and controlling the clustering algorithm. This guide walks you through all the UI components and controls.
+
+## Adding Data Points
+
+The interface provides two ways to add points to your clustering dataset: manual entry and random generation.
+
+### Manual Point Entry
+
+The `InputPoint` component allows you to specify exact coordinates:
+
+<Steps>
+  <Step title="Enter Coordinates">
+    Use the X and Y input fields to specify the point coordinates. Both fields accept values between -1000 and 1000.
+  </Step>
+  
+  <Step title="Add the Point">
+    Click the "Add Point" button to add the point to your dataset. The input fields will clear automatically after adding.
+  </Step>
+</Steps>
+
+```tsx
+// From InputPoint.tsx:14-27
+const handleAdd = () => {
+    const newPoint: Point = {
+        x: xAxis ?? 0,
+        y: yAxis ?? 0
+    }
+    try {
+        props.action(newPoint);
+        setXAxis(undefined);
+        setYAxis(undefined);
+    } catch (error) {
+        console.error(error);
+    }
+}
+```
+
+### Random Point Generation
+
+For quick testing or generating sample datasets, use the "Random Point" button:
+
+```tsx
+// From InputPoint.tsx:29-39
+const handleAddRandom = () => {
+    const newPoint: Point = generateRandomPoints(1)[0];
+    try {
+        props.action(newPoint);
+        setXAxis(undefined);
+        setYAxis(undefined);
+    } catch (error) {
+        console.error(error);
+    }
+}
+```
+
+Random points are generated with coordinates between -100 and 100:
+
+```ts
+// From CMeans.ts:178-188
+export function generateRandomPoints(n: number) {
+    const points = [];
+    for (let i = 0; i < n; i++) {
+        const point = {
+            x: Math.floor(Math.random() * 201) - 100,
+            y: Math.floor(Math.random() * 201) - 100,
+        };
+        points.push(point);
+    }
+    return points as Point[];
+}
+```
+
+<Info>
+Random points are generated within a range of -100 to 100 on both axes, which provides good distribution for visualization.
+</Info>
+
+## Adding Centroids
+
+Centroids are the cluster centers that the algorithm optimizes. Use the same interface pattern as adding points:
+
+<CardGroup cols={2}>
+  <Card title="Manual Centroid" icon="location-dot">
+    Enter specific X and Y coordinates, then click "Add Centroid"
+  </Card>
+  
+  <Card title="Random Centroid" icon="shuffle">
+    Click "Random Centroid" to generate a centroid at random coordinates
+  </Card>
+</CardGroup>
+
+<Note>
+The number of centroids determines the number of clusters (k) in the C-Means algorithm. Start with 2-3 centroids for clear visualization.
+</Note>
+
+## Viewing Your Data
+
+The interface displays your points and centroids in two ways:
+
+### Data Tables
+
+Two separate tables show your current points and centroids with their exact coordinates:
+
+```tsx
+// From App.tsx:28-31
+<section className="px-3 mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+  <PointTable data={points} title="Points" />
+  <PointTable data={centroids} title="Centroids" />
+</section>
+```
+
+Each table displays:
+- **X coordinate**: Formatted to 4 decimal places
+- **Y coordinate**: Formatted to 4 decimal places
+
+### Scatter Plot Visualization
+
+The main visualization shows all points and centroids on a 2D scatter plot. Points are colored based on their cluster membership, while centroids are displayed with a distinct appearance and surrounding area indicator.
+
+```tsx
+// From App.tsx:32-38
+<DataChart
+  points={points}
+  centroids={centroids}
+  membershipMatrix={membershipMatrix}
+/>
+```
+
+## Algorithm Controls
+
+Two primary buttons control the clustering algorithm execution:
+
+### Iterate Button
+
+Click "Iterate" to perform one iteration of the C-Means algorithm:
+
+```tsx
+// From App.tsx:46-48
+<button onClick={onIterate} className='...' >
+  Iterate
+</button>
+```
+
+Each iteration performs:
+1. Calculates distance matrix between all points and centroids
+2. Updates membership matrix based on distances
+3. Recalculates centroid positions
+4. Updates the cost function
+
+<Tip>
+Run iterations one at a time initially to observe how the algorithm converges. You can click multiple times to continue optimizing.
+</Tip>
+
+### Reset Button
+
+The "Reset" button clears all calculated results while preserving your points and centroids:
+
+```tsx
+// From App.tsx:43-45
+<button onClick={onReset} className='...' >
+  Reset
+</button>
+```
+
+<Warning>
+Reset clears the membership matrix, distance matrix, and cost function, returning the algorithm to its initial state. Your data points and centroids remain unchanged.
+</Warning>
+
+## Interface Layout
+
+The complete interface is organized into logical sections from top to bottom:
+
+<Steps>
+  <Step title="Input Controls">
+    Add points and centroids using the input fields at the top
+  </Step>
+  
+  <Step title="Data Tables">
+    Review your current points and centroids in tabular format
+  </Step>
+  
+  <Step title="Visualization">
+    View the scatter plot showing cluster assignments
+  </Step>
+  
+  <Step title="Cost Function Display">
+    Monitor the current cost function value (formatted to 4 decimal places)
+  </Step>
+  
+  <Step title="Algorithm Controls">
+    Use Reset and Iterate buttons to control execution
+  </Step>
+  
+  <Step title="Matrices">
+    View detailed distance and membership matrices at the bottom
+  </Step>
+</Steps>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Simple" icon="seedling">
+    Begin with 5-10 points and 2-3 centroids to understand the algorithm behavior
+  </Card>
+  
+  <Card title="Use Random Generation" icon="dice">
+    Random point generation is useful for quick testing and demonstrations
+  </Card>
+  
+  <Card title="Watch the Cost Function" icon="chart-line">
+    Monitor the cost function between iterations to observe convergence
+  </Card>
+  
+  <Card title="Reset When Needed" icon="rotate-left">
+    Use Reset to start fresh with different initial centroid positions
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+Now that you understand the interface controls, learn how to interpret the results:
+
+<Card title="Understanding Results" icon="chart-simple" href="/guides/understanding-results">
+  Learn how to read the distance matrix, membership matrix, and visualizations
+</Card>

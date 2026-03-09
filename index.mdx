@@ -1,97 +1,159 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Fuzzy C-Means Clustering"
+description: "An interactive React + TypeScript application for visualizing and computing both crisp and fuzzy C-Means clustering algorithms in real-time"
 ---
 
-## Setting up
+<div style={{
+  background: 'linear-gradient(135deg, #fbc926 0%, #8c73fa 100%)',
+  padding: '60px 40px',
+  borderRadius: '6px',
+  marginBottom: '48px',
+  textAlign: 'center'
+}}>
+  <h1 style={{
+    fontSize: '48px',
+    fontWeight: 700,
+    color: '#000000',
+    marginBottom: '16px',
+    fontFamily: 'Inter'
+  }}>
+    Fuzzy C-Means Clustering
+  </h1>
+  <p style={{
+    fontSize: '20px',
+    color: '#000000',
+    opacity: 0.9,
+    maxWidth: '800px',
+    margin: '0 auto',
+    fontFamily: 'Inter'
+  }}>
+    Interactive visualization and computation of crisp and fuzzy C-Means clustering algorithms with real-time updates
+  </p>
+</div>
 
-Get your documentation site up and running in minutes.
+## Get Started
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Everything you need to start exploring clustering algorithms.
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Installation"
+    icon="download"
+    href="/installation"
   >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    Set up the project locally in minutes
   </Card>
   <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
   >
-    Add sample code to demonstrate how to use your product.
+    Run your first clustering iteration
   </Card>
   <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
+    title="Core Concepts"
+    icon="lightbulb"
+    href="/concepts/clustering"
   >
-    Display images and other media.
+    Learn about clustering algorithms
   </Card>
   <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
+    title="Using the Interface"
+    icon="mouse-pointer"
+    href="/guides/using-the-interface"
   >
-    Write once and reuse across your docs.
+    Master the interactive controls
   </Card>
-</Columns>
+</CardGroup>
 
-## Need inspiration?
+## Key Features
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+Powerful tools for exploring and understanding clustering algorithms.
+
+<CardGroup cols={3}>
+  <Card
+    title="Interactive Visualization"
+    icon="chart-scatter"
+  >
+    Real-time Chart.js scatter plots show clusters forming as you iterate
+  </Card>
+  <Card
+    title="Dual Algorithms"
+    icon="code-branch"
+  >
+    Switch between crisp and fuzzy C-Means clustering variants
+  </Card>
+  <Card
+    title="Step-by-Step Control"
+    icon="forward-step"
+  >
+    Iterate through the algorithm one step at a time to understand convergence
+  </Card>
+  <Card
+    title="Matrix Views"
+    icon="table"
+  >
+    Inspect distance and membership matrices for every iteration
+  </Card>
+  <Card
+    title="Cost Function"
+    icon="chart-line"
+  >
+    Monitor the cost function live to track convergence
+  </Card>
+  <Card
+    title="Flexible Input"
+    icon="plus"
+  >
+    Add points and centroids manually or generate them randomly
+  </Card>
+</CardGroup>
+
+## API Reference
+
+Explore the algorithms, hooks, and utilities that power the application.
+
+<CardGroup cols={3}>
+  <Card
+    title="CMeans"
+    icon="circle-nodes"
+    href="/api/cmeans"
+  >
+    Crisp C-Means clustering algorithm
+  </Card>
+  <Card
+    title="Fuzzy C-Means"
+    icon="diagram-project"
+    href="/api/fuzzy-cmeans"
+  >
+    Fuzzy C-Means with soft membership
+  </Card>
+  <Card
+    title="useCMeans Hook"
+    icon="hook"
+    href="/api/use-cmeans"
+  >
+    React hook for state management
+  </Card>
+  <Card
+    title="Distance Matrix"
+    icon="ruler"
+    href="/api/distance-matrix"
+  >
+    Compute Euclidean distances
+  </Card>
+  <Card
+    title="Membership Matrix"
+    icon="users"
+    href="/api/membership-matrix"
+  >
+    Generate cluster assignments
+  </Card>
+  <Card
+    title="Cost Function"
+    icon="calculator"
+    href="/api/cost-function"
+  >
+    Calculate clustering cost
+  </Card>
+</CardGroup>

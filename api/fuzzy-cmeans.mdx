@@ -1,0 +1,176 @@
+---
+title: "Fuzzy C-Means"
+description: "Execute one iteration of the fuzzy C-means clustering algorithm"
+---
+
+## fuzzyCMeans
+
+Executes one iteration of the fuzzy C-means clustering algorithm. Unlike the standard C-means algorithm, this uses fuzzy membership values that allow points to belong to multiple clusters with varying degrees of membership.
+
+```typescript
+export const fuzzyCMeans = (points: Point[], centroids: Point[])
+```
+
+### Parameters
+
+<ParamField path="points" type="Point[]" required>
+  Array of points to cluster. Each point has `x` and `y` coordinates.
+</ParamField>
+
+<ParamField path="centroids" type="Point[]" required>
+  Array of initial centroids. Each centroid has `x` and `y` coordinates.
+</ParamField>
+
+<Note>
+  The fuzzification parameter is hardcoded to `m=2` in this implementation. This parameter controls the degree of fuzziness in the clustering.
+</Note>
+
+### Returns
+
+Returns an object containing the results of one fuzzy C-means iteration:
+
+<ResponseField name="distanceMatrix" type="number[][]">
+  Matrix of distances where each element [i][j] is the distance between the i-th centroid and the j-th point.
+</ResponseField>
+
+<ResponseField name="membershipMatrix" type="number[][]">
+  Fuzzy membership matrix where each element [i][j] represents the degree of membership (0 to 1) of the j-th point to the i-th cluster.
+</ResponseField>
+
+<ResponseField name="newCentroids" type="Point[]">
+  New array of centroids calculated using fuzzy weighted means.
+</ResponseField>
+
+<ResponseField name="costValues" type="number[]">
+  Array of fuzzy cost values for each centroid.
+</ResponseField>
+
+<ResponseField name="costFunction" type="number">
+  Total cost as the sum of all individual fuzzy cost values.
+</ResponseField>
+
+### Example
+
+```typescript
+import { fuzzyCMeans } from './utils/FuzzyCmeans';
+
+const points = [
+  { x: 1, y: 2 },
+  { x: 3, y: 4 },
+  { x: 5, y: 6 },
+  { x: 7, y: 8 }
+];
+
+const centroids = [
+  { x: 2, y: 3 },
+  { x: 6, y: 7 }
+];
+
+const result = fuzzyCMeans(points, centroids);
+
+console.log(result.membershipMatrix);
+// Output: [[0.85, 0.72, 0.23, 0.15], [0.15, 0.28, 0.77, 0.85]]
+console.log(result.newCentroids);
+console.log(result.costFunction);
+```
+
+## Fuzzification Parameter
+
+The fuzzy C-means algorithm uses a fuzzification parameter `m` that controls the degree of fuzziness in the clustering:
+
+- `m = 1`: Hard clustering (equivalent to standard C-means)
+- `m = 2`: Default fuzzy clustering (used in this implementation)
+- `m > 2`: Increasingly fuzzy clustering
+
+The parameter affects how membership values are distributed across clusters. With `m=2`, points can have meaningful membership in multiple clusters, allowing for soft boundaries between clusters.
+
+## Helper Functions
+
+### getFuzzyMembershipMatrix
+
+Calculates the fuzzy membership matrix given a distance matrix and a fuzzification parameter.
+
+```typescript
+export const getFuzzyMembershipMatrix = (
+  distanceMatrix: number[][],
+  fuzzyParameter: number
+): number[][]
+```
+
+<ParamField path="distanceMatrix" type="number[][]" required>
+  Matrix of distances between points and centroids.
+</ParamField>
+
+<ParamField path="fuzzyParameter" type="number" required>
+  Fuzzification parameter (typically set to 2).
+</ParamField>
+
+**Returns:** A fuzzy membership matrix where each element [i][j] represents the degree of membership of the j-th point to the i-th cluster.
+
+### getNewFuzzyCentroids
+
+Calculates new centroids based on the fuzzy membership matrix.
+
+```typescript
+export const getNewFuzzyCentroids = (
+  points: Point[],
+  membershipMatrix: number[][],
+  fuzzyParameter: number
+): Point[]
+```
+
+<ParamField path="points" type="Point[]" required>
+  Array of points.
+</ParamField>
+
+<ParamField path="membershipMatrix" type="number[][]" required>
+  Fuzzy membership matrix.
+</ParamField>
+
+<ParamField path="fuzzyParameter" type="number" required>
+  Fuzzification parameter (typically set to 2).
+</ParamField>
+
+**Returns:** A new array of centroids calculated using fuzzy weighted means.
+
+### getFuzzyCostValues
+
+Calculates the cost values for each centroid based on the fuzzy membership and distance matrices.
+
+```typescript
+export const getFuzzyCostValues = (
+  distanceMatrix: number[][],
+  membershipMatrix: number[][],
+  fuzzyParameter: number
+): number[]
+```
+
+<ParamField path="distanceMatrix" type="number[][]" required>
+  Matrix of distances between points and centroids.
+</ParamField>
+
+<ParamField path="membershipMatrix" type="number[][]" required>
+  Fuzzy membership matrix.
+</ParamField>
+
+<ParamField path="fuzzyParameter" type="number" required>
+  Fuzzification parameter (typically set to 2).
+</ParamField>
+
+**Returns:** An array of cost values for each centroid, calculated using fuzzy membership weights.
+
+## Comparison with Standard C-Means
+
+<Warning>
+  The key difference between fuzzy C-means and standard C-means is that fuzzy C-means allows points to have partial membership in multiple clusters, while standard C-means assigns each point to exactly one cluster.
+</Warning>
+
+**Standard C-Means:**
+- Hard assignment: Each point belongs to exactly one cluster
+- Membership values: Binary (0 or 1)
+- Best for: Well-separated clusters
+
+**Fuzzy C-Means:**
+- Soft assignment: Points can belong to multiple clusters
+- Membership values: Continuous (0 to 1)
+- Best for: Overlapping or ambiguous cluster boundaries

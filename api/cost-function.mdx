@@ -1,0 +1,228 @@
+---
+title: "Cost Function Utilities"
+description: "Functions for calculating cost values and cost functions in clustering algorithms"
+---
+
+## Overview
+
+Cost functions measure the quality of a clustering solution by quantifying how well the data points fit within their assigned clusters. Lower cost values indicate better clustering quality. The library provides cost calculation functions for both crisp and fuzzy clustering.
+
+## getCostValues
+
+Calculates the cost values for each centroid based on the crisp membership and distance matrices.
+
+```typescript
+getCostValues(membershipMatrix: number[][], distanceMatrix: number[][]): number[]
+```
+
+### Parameters
+
+<ParamField path="membershipMatrix" type="number[][]" required>
+  Crisp membership matrix where `membershipMatrix[i][j]` is `1` if point `j` belongs to cluster `i`, otherwise `0`.
+</ParamField>
+
+<ParamField path="distanceMatrix" type="number[][]" required>
+  Matrix of distances where `distanceMatrix[i][j]` is the distance between centroid `i` and point `j`.
+</ParamField>
+
+### Returns
+
+<ResponseField name="costValues" type="number[]">
+  An array of cost values for each centroid, where each value represents the sum of distances from the centroid to all points assigned to it. Returns an empty array if either input matrix is empty.
+</ResponseField>
+
+### Example
+
+```typescript
+import { getDistanceMatrix, getMembershipMatrix, getCostValues } from 'fuzzy-cmeans';
+
+const points = [
+  { x: 1, y: 1 },
+  { x: 2, y: 2 },
+  { x: 10, y: 10 }
+];
+
+const centroids = [
+  { x: 1.5, y: 1.5 },
+  { x: 10, y: 10 }
+];
+
+const distanceMatrix = getDistanceMatrix(points, centroids);
+const membershipMatrix = getMembershipMatrix(distanceMatrix);
+const costValues = getCostValues(membershipMatrix, distanceMatrix);
+// Returns: [sum of distances for cluster 0, sum of distances for cluster 1]
+// Example: [1.41, 0.0] - cluster 0 has total distance 1.41, cluster 1 has 0
+```
+
+<Note>
+  For crisp clustering, the cost value for each cluster is simply the sum of distances from the centroid to all points assigned to that cluster.
+</Note>
+
+---
+
+## getFuzzyCostValues
+
+Calculates the cost values for each centroid based on the fuzzy membership and distance matrices.
+
+```typescript
+getFuzzyCostValues(distanceMatrix: number[][], membershipMatrix: number[][], fuzzyParameter: number): number[]
+```
+
+### Parameters
+
+<ParamField path="distanceMatrix" type="number[][]" required>
+  Matrix of distances where `distanceMatrix[i][j]` is the distance between centroid `i` and point `j`.
+</ParamField>
+
+<ParamField path="membershipMatrix" type="number[][]" required>
+  Fuzzy membership matrix where `membershipMatrix[i][j]` is the degree of membership (0 to 1) of point `j` in cluster `i`.
+</ParamField>
+
+<ParamField path="fuzzyParameter" type="number" required>
+  Fuzzification parameter (typically denoted as `m`). Controls the degree of fuzziness. Common value is 2.
+</ParamField>
+
+### Returns
+
+<ResponseField name="costValues" type="number[]">
+  An array of cost values for each centroid, calculated using weighted squared distances. Returns an empty array if either input matrix is empty.
+</ResponseField>
+
+### Example
+
+```typescript
+import { getDistanceMatrix, getFuzzyMembershipMatrix, getFuzzyCostValues } from 'fuzzy-cmeans';
+
+const points = [
+  { x: 1, y: 1 },
+  { x: 2, y: 2 },
+  { x: 10, y: 10 }
+];
+
+const centroids = [
+  { x: 1.5, y: 1.5 },
+  { x: 10, y: 10 }
+];
+
+const fuzzyParameter = 2;
+const distanceMatrix = getDistanceMatrix(points, centroids);
+const membershipMatrix = getFuzzyMembershipMatrix(distanceMatrix, fuzzyParameter);
+const costValues = getFuzzyCostValues(distanceMatrix, membershipMatrix, fuzzyParameter);
+// Returns: [weighted cost for cluster 0, weighted cost for cluster 1]
+```
+
+<Note>
+  For fuzzy clustering, each point contributes to the cost of all clusters, weighted by its membership degree raised to the fuzzy parameter.
+</Note>
+
+### Mathematical Formula
+
+The fuzzy cost value for cluster `i` is calculated as:
+
+```
+Jᵢ = Σⱼ (uᵢⱼ)^m * (dᵢⱼ)²
+```
+
+Where:
+- `Jᵢ` is the cost value for cluster `i`
+- `uᵢⱼ` is the membership of point `j` to cluster `i`
+- `m` is the fuzzification parameter
+- `dᵢⱼ` is the distance from point `j` to centroid `i`
+- The sum is over all points `j`
+
+---
+
+## getCostFunction
+
+Calculates the total cost from an array of individual cost values.
+
+```typescript
+getCostFunction(costValues: number[]): number
+```
+
+### Parameters
+
+<ParamField path="costValues" type="number[]" required>
+  Array of individual cost values (one per cluster), typically obtained from `getCostValues()` or `getFuzzyCostValues()`.
+</ParamField>
+
+### Returns
+
+<ResponseField name="totalCost" type="number">
+  The total cost as the sum of all individual cost values. Returns `0` if the input array is empty.
+</ResponseField>
+
+### Example
+
+```typescript
+import { getCostFunction } from 'fuzzy-cmeans';
+
+const costValues = [12.5, 8.3, 15.7];
+const totalCost = getCostFunction(costValues);
+// Returns: 36.5 (12.5 + 8.3 + 15.7)
+```
+
+### Usage in Iteration
+
+The total cost function is typically used to track convergence during the iterative clustering process:
+
+```typescript
+import { CMeans, getCostFunction } from 'fuzzy-cmeans';
+
+let points = [/* your points */];
+let centroids = [/* initial centroids */];
+let previousCost = Infinity;
+const threshold = 0.01;
+
+while (true) {
+  const result = CMeans(points, centroids);
+  const currentCost = result.costFunction;
+  
+  // Check convergence
+  if (Math.abs(previousCost - currentCost) < threshold) {
+    console.log('Converged!');
+    break;
+  }
+  
+  previousCost = currentCost;
+  centroids = result.newCentroids;
+}
+```
+
+<Note>
+  The cost function decreases with each iteration as the algorithm converges to an optimal clustering solution. Monitoring the cost function helps determine when to stop iterating.
+</Note>
+
+## Crisp vs Fuzzy Cost Calculation
+
+### Crisp Cost
+
+- **Binary weighting**: Only considers points that belong to the cluster (membership = 1)
+- **Simple sum**: Adds up distances for all assigned points
+- **Formula**: `J = Σⱼ uᵢⱼ * dᵢⱼ` where `uᵢⱼ ∈ {0, 1}`
+
+### Fuzzy Cost
+
+- **Probabilistic weighting**: Considers all points with their membership degrees
+- **Weighted sum**: Uses membership values raised to the fuzzy parameter
+- **Formula**: `J = Σⱼ (uᵢⱼ)^m * (dᵢⱼ)²`
+
+<CodeGroup>
+
+```typescript Crisp Cost
+const crispCostValues = getCostValues(membershipMatrix, distanceMatrix);
+const crispTotalCost = getCostFunction(crispCostValues);
+// Only sums distances for points with membership = 1
+```
+
+```typescript Fuzzy Cost
+const fuzzyCostValues = getFuzzyCostValues(
+  distanceMatrix,
+  membershipMatrix,
+  2
+);
+const fuzzyTotalCost = getCostFunction(fuzzyCostValues);
+// Weights all points by their membership degrees
+```
+
+</CodeGroup>

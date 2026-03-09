@@ -1,0 +1,414 @@
+---
+title: "Fuzzy C-Means Algorithm"
+description: "Understanding soft cluster assignments and probabilistic membership matrices"
+---
+
+## Overview
+
+Fuzzy C-Means (FCM) is a clustering algorithm that allows each data point to belong to multiple clusters with varying degrees of membership. Unlike crisp clustering, where membership is binary, fuzzy clustering assigns membership values between 0 and 1 that represent the probability or degree of belonging.
+
+<Info>
+Fuzzy clustering better models real-world scenarios where boundaries between groups are gradual rather than sharp, such as customer behavior patterns or image segmentation.
+</Info>
+
+## Key Concept: Soft Membership
+
+In fuzzy C-Means:
+
+- Each point has a **membership value** for every cluster (between 0 and 1)
+- Membership values for each point **sum to 1** across all clusters
+- Higher membership values indicate stronger association with a cluster
+- A **fuzzification parameter (m)** controls the degree of fuzziness
+
+<Note>
+When m = 1, the algorithm becomes crisp C-Means. As m increases, cluster boundaries become fuzzier and memberships more evenly distributed.
+</Note>
+
+## Algorithm Steps
+
+The fuzzy C-Means algorithm follows these steps in each iteration:
+
+<Steps>
+  <Step title="Calculate Distance Matrix">
+    Compute Euclidean distances between all points and all centroids
+  </Step>
+  <Step title="Generate Fuzzy Membership Matrix">
+    Calculate probabilistic membership values using the distance matrix and fuzzification parameter
+  </Step>
+  <Step title="Update Centroids">
+    Calculate new centroid positions using weighted means based on fuzzy memberships
+  </Step>
+  <Step title="Compute Cost Function">
+    Calculate the weighted sum of squared distances to monitor convergence
+  </Step>
+</Steps>
+
+## Mathematical Formulation
+
+### Fuzzification Parameter
+
+The parameter **m** (typically m ≥ 1) controls fuzziness:
+
+- **m = 1**: Crisp clustering (binary membership)
+- **m = 2**: Standard fuzzy clustering (most common)
+- **m > 2**: Very fuzzy clustering (more evenly distributed memberships)
+
+### Fuzzy Membership Matrix
+
+For point $j$ and cluster $i$, the membership value is:
+
+$$
+U_{ij} = \frac{1}{\sum_{k=1}^{C} \left(\frac{D_{ij}}{D_{kj}}\right)^{\frac{2}{m-1}}}
+$$
+
+Where:
+- $U_{ij}$ is the membership of point $j$ to cluster $i$
+- $D_{ij}$ is the distance from point $j$ to centroid $i$
+- $C$ is the number of clusters
+- $m$ is the fuzzification parameter
+
+<Note>
+Each column of the membership matrix sums to 1: $\sum_{i=1}^{C} U_{ij} = 1$ for all points $j$.
+</Note>
+
+### Centroid Update
+
+Centroids are calculated as weighted means, where weights are membership values raised to power m:
+
+$$
+c_i = \frac{\sum_{j=1}^{N} U_{ij}^m \cdot p_j}{\sum_{j=1}^{N} U_{ij}^m}
+$$
+
+This gives more weight to points with higher membership values.
+
+### Cost Function
+
+The objective function minimizes weighted squared distances:
+
+$$
+J = \sum_{i=1}^{C} \sum_{j=1}^{N} U_{ij}^m \cdot D_{ij}^2
+$$
+
+## Implementation
+
+### Step 1: Calculate Fuzzy Membership Matrix
+
+The fuzzy membership calculation distributes membership values across clusters:
+
+```typescript
+/**
+ * Calculates the fuzzy membership matrix given a distance matrix 
+ * and a fuzzification parameter.
+ * 
+ * @param distanceMatrix - Matrix of distances between points and centroids.
+ * @param fuzzyParameter - Fuzzification parameter (m).
+ * @returns A fuzzy membership matrix.
+ */
+export const getFuzzyMembershipMatrix = (
+    distanceMatrix: number[][], 
+    fuzzyParameter: number
+): number[][] => {
+    if (distanceMatrix.length === 0) {
+        return [];
+    }
+
+    const membershipMatrix: number[][] = [];
+
+    for (let i = 0; i < distanceMatrix.length; i++) {
+        const membershipRow: number[] = [];
+        for (let j = 0; j < distanceMatrix[0].length; j++) {
+            let clusterSum = 0;
+            
+            // Sum over all clusters
+            for (let k = 0; k < distanceMatrix.length; k++) {
+                if (distanceMatrix[k][j] !== 0) {
+                    clusterSum += Math.pow(
+                        (distanceMatrix[i][j] / distanceMatrix[k][j]), 
+                        2 / (fuzzyParameter - 1)
+                    );
+                }
+            }
+            
+            const membershipValue = clusterSum !== 0 ? 1 / clusterSum : 1;
+            membershipRow.push(membershipValue);
+        }
+        membershipMatrix.push(membershipRow);
+    }
+    return membershipMatrix;
+}
+```
+
+<Tip>
+The formula uses `2 / (fuzzyParameter - 1)` because the standard formulation with m=2 simplifies to comparing distance ratios raised to power 2.
+</Tip>
+
+### Step 2: Update Centroids with Weighted Means
+
+Centroids are calculated using fuzzy membership weights:
+
+```typescript
+/**
+ * Calculates new centroids based on the fuzzy membership matrix.
+ * 
+ * @param points - Array of points.
+ * @param membershipMatrix - Fuzzy membership matrix.
+ * @param fuzzyParameter - Fuzzification parameter (m).
+ * @returns A new array of centroids.
+ */
+export const getNewFuzzyCentroids = (
+    points: Point[], 
+    membershipMatrix: number[][], 
+    fuzzyParameter: number
+): Point[] => {
+    if (membershipMatrix.length === 0 || points.length === 0) {
+        return [];
+    }
+
+    const newCentroids: Point[] = [];
+    
+    for (let i = 0; i < membershipMatrix.length; i++) {
+        let membershipx = 0;
+        let membershipy = 0;
+        let membership = 0;
+        
+        // Calculate weighted sums
+        for (let j = 0; j < membershipMatrix[0].length; j++) {
+            const squareMembership = Math.pow(
+                membershipMatrix[i][j], 
+                fuzzyParameter
+            );
+            membership += squareMembership;
+            membershipx += squareMembership * points[j].x;
+            membershipy += squareMembership * points[j].y;
+        }
+        
+        // Weighted mean
+        const x = membershipx / membership;
+        const y = membershipy / membership;
+
+        newCentroids.push({ x, y });
+    }
+    return newCentroids;
+}
+```
+
+<Note>
+Membership values are raised to the power m before weighting, giving exponentially more influence to points with higher membership.
+</Note>
+
+### Step 3: Calculate Fuzzy Cost Function
+
+The cost function uses squared distances weighted by membership values:
+
+```typescript
+/**
+ * Calculates the cost values for each centroid based on the fuzzy membership 
+ * and distance matrices.
+ * 
+ * @param distanceMatrix - Matrix of distances between points and centroids.
+ * @param membershipMatrix - Fuzzy membership matrix.
+ * @param fuzzyParameter - Fuzzification parameter (m).
+ * @returns An array of cost values for each centroid.
+ */
+export const getFuzzyCostValues = (
+    distanceMatrix: number[][], 
+    membershipMatrix: number[][], 
+    fuzzyParameter: number
+): number[] => {
+    if (distanceMatrix.length === 0 || membershipMatrix.length === 0) {
+        return [];
+    }
+    
+    const costValues: number[] = [];
+    
+    for (let i = 0; i < distanceMatrix.length; i++) {
+        let costValue = 0;
+        for (let j = 0; j < distanceMatrix[0].length; j++) {
+            costValue += 
+                Math.pow(membershipMatrix[i][j], fuzzyParameter) * 
+                Math.pow(distanceMatrix[i][j], 2);
+        }
+        costValues.push(costValue);
+    }
+    return costValues;
+}
+```
+
+## Complete Iteration
+
+The main function executes one complete fuzzy iteration:
+
+```typescript
+/**
+ * Executes one iteration of the fuzzy C-means clustering algorithm.
+ * 
+ * @param points - Array of points.
+ * @param centroids - Array of centroids.
+ * @returns An object containing the distance matrix, fuzzy membership matrix, 
+ *          new centroids, cost values, and total cost function.
+ */
+export const fuzzyCMeans = (points: Point[], centroids: Point[]) => {
+    const distanceMatrix = getDistanceMatrix(points, centroids);
+    const membershipMatrix = getFuzzyMembershipMatrix(distanceMatrix, 2);
+    const newCentroids = getNewFuzzyCentroids(points, membershipMatrix, 2);
+    const costValues = getFuzzyCostValues(distanceMatrix, membershipMatrix, 2);
+    const costFunction = getCostFunction(costValues);
+
+    return {
+        distanceMatrix,
+        membershipMatrix,
+        newCentroids,
+        costValues,
+        costFunction,
+    }
+}
+```
+
+<Info>
+This implementation uses m=2 as the fuzzification parameter, which is the most common choice in practice.
+</Info>
+
+## Membership Matrix Structure
+
+### Probabilistic Assignment Example
+
+Consider 3 clusters and 5 points with fuzzy membership:
+
+```
+Distance Matrix:
+        P1    P2    P3    P4    P5
+C1     2.5   8.3   9.1   3.2   7.6
+C2     7.8   1.9   8.5   6.4   2.3
+C3     9.2   7.1   2.0   8.9   2.8
+
+Fuzzy Membership Matrix:
+        P1    P2    P3    P4    P5
+C1     0.68  0.11  0.09  0.63  0.14
+C2     0.22  0.74  0.11  0.26  0.71
+C3     0.10  0.15  0.80  0.11  0.15
+
+Column sums: 1.00  1.00  1.00  1.00  1.00
+```
+
+<Note>
+Unlike crisp clustering, points near cluster boundaries have significant membership to multiple clusters. Point P1 is primarily in C1 (0.68) but has some association with C2 (0.22) and C3 (0.10).
+</Note>
+
+## Effect of Fuzzification Parameter
+
+### m = 1.5 (Low Fuzziness)
+
+```
+        P1    P2    P3    P4    P5
+C1     0.85  0.08  0.05  0.80  0.10
+C2     0.12  0.87  0.07  0.15  0.82
+C3     0.03  0.05  0.88  0.05  0.08
+```
+
+Memberships are closer to binary (0 or 1).
+
+### m = 2.0 (Standard Fuzziness)
+
+```
+        P1    P2    P3    P4    P5
+C1     0.68  0.11  0.09  0.63  0.14
+C2     0.22  0.74  0.11  0.26  0.71
+C3     0.10  0.15  0.80  0.11  0.15
+```
+
+Balanced fuzzy memberships (most common).
+
+### m = 3.0 (High Fuzziness)
+
+```
+        P1    P2    P3    P4    P5
+C1     0.45  0.28  0.25  0.42  0.30
+C2     0.35  0.48  0.27  0.37  0.45
+C3     0.20  0.24  0.48  0.21  0.25
+```
+
+Memberships are more evenly distributed.
+
+<Warning>
+Very high m values (m > 3) can cause over-fuzzification where all memberships become nearly equal, making the clustering less meaningful.
+</Warning>
+
+## Characteristics
+
+### Advantages
+
+- **Handles uncertainty**: Models gradual transitions between clusters
+- **More robust**: Less sensitive to initialization than crisp clustering
+- **Richer information**: Membership degrees provide insight into data structure
+- **Overlapping clusters**: Can represent points that belong to multiple groups
+
+### Limitations
+
+- **Computational cost**: Requires more calculations than crisp clustering
+- **Parameter tuning**: Choosing the right m value requires domain knowledge
+- **Interpretation complexity**: Probabilistic memberships are harder to explain
+- **Memory usage**: Floating-point membership values require more storage
+
+<Tip>
+For most applications, m=2 provides a good balance between fuzziness and interpretability. Experiment with values between 1.5 and 2.5 to find the best fit for your data.
+</Tip>
+
+## Convergence
+
+Fuzzy C-Means converges when:
+
+1. **Centroid stability**: Change in centroid positions falls below threshold
+2. **Cost function plateau**: Change in cost function is minimal
+3. **Membership stability**: Membership values stop changing significantly
+
+```typescript
+// Example convergence criteria
+const hasConverged = (
+    Math.abs(previousCost - currentCost) < 0.001 ||
+    maxCentroidMovement < 0.01
+);
+```
+
+<Info>
+Fuzzy C-Means typically converges more smoothly than crisp C-Means because fuzzy memberships change gradually rather than jumping between 0 and 1.
+</Info>
+
+## Use Cases
+
+Fuzzy C-Means excels at:
+
+- **Image segmentation** with gradual color transitions
+- **Customer behavior analysis** where preferences overlap
+- **Medical diagnosis** with symptom patterns that span multiple conditions
+- **Pattern recognition** in noisy or ambiguous data
+- **Anomaly detection** by examining low membership values across all clusters
+
+## Comparison: Crisp vs. Fuzzy
+
+<CardGroup cols={2}>
+  <Card title="Crisp C-Means" icon="circle-dot">
+    - Binary membership (0 or 1)
+    - Hard cluster boundaries
+    - Faster computation
+    - Easier interpretation
+    - Best for well-separated data
+  </Card>
+  <Card title="Fuzzy C-Means" icon="cloud">
+    - Probabilistic membership (0 to 1)
+    - Soft cluster boundaries
+    - More computation
+    - Richer information
+    - Best for overlapping data
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Crisp C-Means" icon="circle-dot" href="/concepts/crisp-cmeans">
+    Compare with hard cluster assignments
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/fuzzy-cmeans">
+    Explore the complete API documentation
+  </Card>
+</CardGroup>

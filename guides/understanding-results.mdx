@@ -1,0 +1,327 @@
+---
+title: Understanding Results
+description: Learn how to interpret the distance matrix, membership matrix, and visualizations produced by the C-Means algorithm
+---
+
+The C-Means Calculator displays several types of results that help you understand how the algorithm is clustering your data. This guide explains how to read and interpret each result component.
+
+## Distance Matrix
+
+The distance matrix shows the Euclidean distance between each centroid and each point.
+
+### Matrix Structure
+
+The distance matrix is organized as:
+- **Rows**: Each row represents a centroid (C0, C1, C2, ...)
+- **Columns**: Each column represents a point (P0, P1, P2, ...)
+- **Values**: Each cell contains the distance between that centroid and point
+
+```tsx
+// From MatrixTable.tsx:8-46
+const columns = [{
+    title: `C`,
+    dataIndex: `centroid`,
+    key: `centroid`,
+    fixed: true
+}]
+
+if (matrix.length) {
+    columns.push(...matrix[0].map((_point, index) => ({
+        title: `P${index}`,
+        dataIndex: `${index}`,
+        key: index.toString(),
+        fixed: false
+    }))
+    )
+}
+
+const dataSource = matrix.map((_row, index) => (
+    {
+        key: `row${index}`,
+        centroid: index,
+        ..._row.map((value) => (value.toFixed(4)))
+    }
+));
+```
+
+### Distance Calculation
+
+Distances are calculated using the Euclidean distance formula:
+
+```ts
+// From CMeans.ts:32-35
+export const euclidianDistance = (pointA: Point, pointB: Point) => {
+    const distance = Math.sqrt(Math.pow((pointA.x - pointB.x), 2) + Math.pow((pointA.y - pointB.y), 2));
+    return distance;
+}
+```
+
+The complete distance matrix is computed by iterating over all centroid-point pairs:
+
+```ts
+// From CMeans.ts:8-23
+export const getDistanceMatrix = (points: Point[], centroids: Point[]) => {
+    if (points.length === 0 || centroids.length === 0) {
+        return [];
+    }
+
+    const distanceMatrix = [];
+    for (let i = 0; i < centroids.length; i++) {
+        const distancesRow = [];
+        for (let j = 0; j < points.length; j++) {
+            const newDistance = euclidianDistance(centroids[i], points[j]);
+            distancesRow.push(newDistance);
+        }
+        distanceMatrix.push(distancesRow);
+    }
+    return distanceMatrix;
+}
+```
+
+<Info>
+All distance values are displayed with 4 decimal places for precision. Smaller values indicate points that are closer to a centroid.
+</Info>
+
+### Reading Distance Values
+
+<Steps>
+  <Step title="Locate the Point">
+    Find the column for the point you're interested in (e.g., P3)
+  </Step>
+  
+  <Step title="Compare Across Rows">
+    Look at all values in that column to see distances from each centroid
+  </Step>
+  
+  <Step title="Identify Minimum">
+    The smallest value indicates which centroid the point is closest to
+  </Step>
+</Steps>
+
+## Membership Matrix
+
+The membership matrix shows which cluster each point belongs to. In hard C-Means clustering, this is a binary assignment.
+
+### Matrix Structure
+
+- **Rows**: Each row represents a centroid/cluster
+- **Columns**: Each column represents a point
+- **Values**: Either 1 (point belongs to this cluster) or 0 (point does not belong)
+
+### Membership Calculation
+
+The membership is determined by finding the minimum distance:
+
+```ts
+// From CMeans.ts:43-63
+export const getMembershipMatrix = (distanceMatrix: number[][]) => {
+    if (distanceMatrix.length === 0) {
+        return [];
+    }
+
+    const membershipMatrix = [...zeroMatrix(distanceMatrix)];
+
+    for (let j = 0; j < distanceMatrix[0].length; j++) {
+        let min = distanceMatrix[0][j];
+        let minPosition = 0;
+
+        for (let i = 0; i < distanceMatrix.length; i++) {
+            if (distanceMatrix[i][j] < min) {
+                min = distanceMatrix[i][j];
+                minPosition = i;
+            }
+        }
+        membershipMatrix[minPosition][j] = 1;
+    }
+    return membershipMatrix;
+}
+```
+
+<Note>
+Each column in the membership matrix sums to exactly 1, meaning each point belongs to exactly one cluster.
+</Note>
+
+### Interpreting Membership
+
+<CardGroup cols={2}>
+  <Card title="Value = 1" icon="check">
+    The point belongs to this cluster and will be used to recalculate the centroid position
+  </Card>
+  
+  <Card title="Value = 0" icon="xmark">
+    The point does not belong to this cluster and won't influence this centroid's position
+  </Card>
+</CardGroup>
+
+## Scatter Plot Visualization
+
+The scatter plot provides an intuitive visual representation of your clustering results.
+
+### Visual Elements
+
+<Steps>
+  <Step title="Points (Small Circles)">
+    Data points are displayed as small circles colored according to their cluster assignment
+  </Step>
+  
+  <Step title="Centroids (Larger Circles)">
+    Centroids appear as larger, more prominent circles with distinct borders
+  </Step>
+  
+  <Step title="Centroid Areas (Translucent Circles)">
+    Each centroid has a translucent area indicator showing its zone of influence
+  </Step>
+</Steps>
+
+### Color Representation
+
+Colors are assigned based on cluster membership:
+
+```tsx
+// From DataChart.tsx:5-7
+const centroidHues = [8, 205, 138, 44, 280, 328, 184, 112];
+
+const getCentroidHue = (index: number) => centroidHues[index % centroidHues.length];
+```
+
+#### Point Coloring
+
+Points are colored according to their dominant cluster membership:
+
+```tsx
+// From DataChart.tsx:9-39
+const getPointColor = (pointIndex: number, membershipMatrix: number[][]) => {
+  if (membershipMatrix.length === 0) {
+    return {
+      background: 'rgba(107, 114, 128, 0.55)',
+      border: 'rgba(75, 85, 99, 0.9)',
+    };
+  }
+
+  let dominantCluster = 0;
+  let highestMembership = membershipMatrix[0]?.[pointIndex] ?? 0;
+
+  for (let clusterIndex = 1; clusterIndex < membershipMatrix.length; clusterIndex++) {
+    const currentMembership = membershipMatrix[clusterIndex]?.[pointIndex] ?? 0;
+    if (currentMembership > highestMembership) {
+      highestMembership = currentMembership;
+      dominantCluster = clusterIndex;
+    }
+  }
+
+  const hue = getCentroidHue(dominantCluster);
+  const normalizedMembership = Math.max(0, Math.min(highestMembership, 1));
+  const saturation = 55 + normalizedMembership * 28;
+  const lightness = 82 - normalizedMembership * 30;
+  const borderLightness = Math.max(28, lightness - 18);
+  const alpha = 0.45 + normalizedMembership * 0.45;
+
+  return {
+    background: `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`,
+    border: `hsl(${hue}, ${Math.min(100, saturation + 6)}%, ${borderLightness}%)`,
+  };
+};
+```
+
+<Info>
+Before clustering begins (empty membership matrix), points appear in neutral gray. Once clustering starts, they take on their cluster's color.
+</Info>
+
+### Chart Configuration
+
+The scatter plot uses Chart.js with three datasets:
+
+```tsx
+// From DataChart.tsx:60-89
+data={{
+  datasets: [
+    {
+      label: 'Points',
+      data: points,
+      backgroundColor: pointColors.map(({ background }) => background),
+      borderColor: pointColors.map(({ border }) => border),
+      borderWidth: 1,
+      pointRadius: 4,
+    },
+    {
+      label: 'Centroids',
+      data: centroids,
+      backgroundColor: centroidColors.map(({ background }) => background),
+      borderColor: centroidColors.map(({ border }) => border),
+      borderWidth: 2,
+      pointRadius: 5,
+    },
+    {
+      label: 'Centroids Area',
+      data: centroids,
+      backgroundColor: centroidColors.map(({ area }) => area),
+      borderColor: centroidColors.map(({ border }) => border),
+      borderWidth: 1,
+      pointRadius: 20,
+    },
+  ]
+}}
+```
+
+## Visual Interpretation Tips
+
+<CardGroup cols={2}>
+  <Card title="Color Consistency" icon="palette">
+    Each cluster has a unique color. Points and centroids of the same cluster share the same hue.
+  </Card>
+  
+  <Card title="Spatial Grouping" icon="object-group">
+    Points should cluster around their assigned centroid. Large distances suggest suboptimal clustering.
+  </Card>
+  
+  <Card title="Centroid Movement" icon="arrows-to-circle">
+    After each iteration, centroids move toward the center of their assigned points.
+  </Card>
+  
+  <Card title="Area Overlap" icon="circle-nodes">
+    Overlapping centroid areas indicate clusters that are close together or may need reconfiguration.
+  </Card>
+</CardGroup>
+
+## Cost Function Display
+
+The cost function value appears prominently between the visualization and control buttons:
+
+```tsx
+// From App.tsx:39-41
+<section className="px-3 mt-4 flex justify-center py-2">
+  <h2 className="text-xl font-semibold">Cost Function: {costFunction.toFixed(4) ?? 0}</h2>
+</section>
+```
+
+<Tip>
+The cost function should decrease with each iteration as the algorithm optimizes cluster assignments. Learn more in the [Monitoring Convergence](/guides/convergence) guide.
+</Tip>
+
+## Reading Results Together
+
+For complete understanding, examine all results in combination:
+
+<Steps>
+  <Step title="Check the Scatter Plot">
+    Get an intuitive sense of cluster formation and centroid positions
+  </Step>
+  
+  <Step title="Review the Membership Matrix">
+    Verify which points belong to which clusters
+  </Step>
+  
+  <Step title="Examine the Distance Matrix">
+    Confirm that assigned points are indeed closest to their centroid
+  </Step>
+  
+  <Step title="Monitor the Cost Function">
+    Track whether the algorithm is still improving
+  </Step>
+</Steps>
+
+## Next Steps
+
+<Card title="Monitoring Convergence" icon="gauge-high" href="/guides/convergence">
+  Learn how to determine when the algorithm has reached an optimal solution
+</Card>
